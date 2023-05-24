@@ -48,6 +48,12 @@
 #include <current.h>
 #include <addrspace.h>
 #include <vnode.h>
+#include "opt-waitpid.h"
+
+#if OPT_WAITPID
+#include <synch.h>
+#endif
+
 
 /*
  * The process for the kernel; this holds all the kernel-only threads.
@@ -76,11 +82,15 @@ proc_create(const char *name)
 	proc->p_numthreads = 0;
 	spinlock_init(&proc->p_lock);
 
+
+
 	/* VM fields */
 	proc->p_addrspace = NULL;
 
 	/* VFS fields */
 	proc->p_cwd = NULL;
+
+
 
 	return proc;
 }
@@ -319,14 +329,22 @@ proc_setas(struct addrspace *newas)
 	return oldas;
 }
 
-struct proc* proc_search_pid(pid_t pid){
-	#if OPT_WAITPID
-	KASSERT(pid>=0 && pid <MAX_PROC);
-	struct proc *retvalue=processTable.proc[pid];
-	KASSERT(retvalue->p_pid==pid);
-	return retvalue;
-	#else
-	(void)pid;
-	return NULL;
-	#endif
+int proc_wait(struct proc * proc)
+{
+#if OPT_WAITPID
+	int return_status;
+	KASSERT (proc != NULL);
+	KASSERT(proc!=kproc);
+
+	//wait on process until it finishes execution
+	P(proc->p_sem);
+	return_status = proc->p_status;
+	proc_destroy(proc);
+	return return_status;
+#else
+	(void) proc;
+	return 0;
+	//this process doesnt synchronize
+#endif
+
 }

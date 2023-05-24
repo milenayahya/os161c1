@@ -50,7 +50,8 @@
 #include <test.h>
 #include <version.h>
 #include "autoconf.h"  // for pseudoconfig
-
+#include "hello.h"
+#include "opt-hello.h"
 
 /*
  * These two pieces of data are maintained by the makefiles and build system.
@@ -70,7 +71,6 @@ extern const char buildconfig[];
 static const char harvard_copyright[] =
     "Copyright (c) 2000, 2001-2005, 2008-2011, 2013, 2014\n"
     "   President and Fellows of Harvard College.  All rights reserved.\n";
-
 
 /*
  * Initial boot sequence.
@@ -209,7 +209,11 @@ void
 kmain(char *arguments)
 {
 	boot();
-
+	
+	#if OPT_HELLO
+	hello();
+	#endif
+	
 	menu(arguments);
 
 	/* Should not get here */

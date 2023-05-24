@@ -29,7 +29,6 @@
 
 #ifndef _PROC_H_
 #define _PROC_H_
-#define MAX_PROC 100
 
 /*
  * Definition of a process.
@@ -38,6 +37,7 @@
  */
 
 #include <spinlock.h>
+#include "opt-waitpid.h"
 
 struct addrspace;
 struct thread;
@@ -64,6 +64,12 @@ struct proc {
 	char *p_name;			/* Name of this process */
 	struct spinlock p_lock;		/* Lock for this structure */
 	unsigned p_numthreads;		/* Number of threads in this process */
+	
+#if OPT_WAITPID
+	struct semaphore *p_sem;
+	pid_t p_pid;
+	int p_status;
+#endif
 
 	/* VM */
 	struct addrspace *p_addrspace;	/* virtual address space */
@@ -72,17 +78,7 @@ struct proc {
 	struct vnode *p_cwd;		/* current working directory */
 
 	/* add more material here as needed */
-	pid_t p_pid;
 };
-
-typedef struct processTable_s{
-	int active;
-	struct proc *proc[MAX_PROC+1];
-	int last_i; //last allocated pid
-	struct spinlock lk;
-} processTable_t;
-
-processTable_t processTable;
 
 /* This is the process structure for the kernel and for kernel-only threads. */
 extern struct proc *kproc;
@@ -108,7 +104,8 @@ struct addrspace *proc_getas(void);
 /* Change the address space of the current process, and return the old one. */
 struct addrspace *proc_setas(struct addrspace *);
 
-struct proc *proc_search_pid(int);
+
+int proc_wait(struct proc *);
 
 
 #endif /* _PROC_H_ */
