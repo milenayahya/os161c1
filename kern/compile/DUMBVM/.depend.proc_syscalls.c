@@ -5,7 +5,7 @@ proc_syscalls.o: ../../syscall/proc_syscalls.c ../../include/types.h \
  ../../include/copyinout.h ../../include/syscall.h ../../include/cdefs.h \
  opt-syscalls.h ../../include/lib.h opt-noasserts.h ../../include/proc.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
- includelinks/machine/spinlock.h ../../include/thread.h \
+ includelinks/machine/spinlock.h opt-waitpid.h ../../include/thread.h \
  ../../include/array.h ../../include/threadlist.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h ../../include/addrspace.h \

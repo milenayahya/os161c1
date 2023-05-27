@@ -38,6 +38,7 @@
 #include <mips/tlb.h>
 #include <addrspace.h>
 #include <vm.h>
+#include "opt-tlb_management.h"
 
 /*
  * Dumb MIPS-only "VM system" that is intended to only be just barely
@@ -320,7 +321,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	/* Disable interrupts on this CPU while frobbing the TLB. */
 	spl = splhigh();
 
-	for (i=0; i<NUM_TLB; i++) {
+	for (i=0; i< NUM_TLB; i++) {
 		tlb_read(&ehi, &elo, i);
 		if (elo & TLBLO_VALID) {
 			continue;
@@ -333,9 +334,20 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		return 0;
 	}
 
-	kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
+	//we have reached the end of the TLB and it is full, need a victim
+	#if OPT_TLB_MANAGEMENT
+	ehi = faultaddress;
+	elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
+	int victim = tlb_get_victim();
+	tlb_write(ehi, elo, victim);
+	kprintf("tlb entry replaced\n");
+	#endif
+	return 0;
+
+	/*kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
 	splx(spl);
 	return EFAULT;
+	*/
 }
 
 struct addrspace *
@@ -380,7 +392,7 @@ as_activate(void)
 	spl = splhigh();
 
 	for (i=0; i<NUM_TLB; i++) {
-		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
+		//tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
 	}
 
 	splx(spl);

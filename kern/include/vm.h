@@ -38,6 +38,7 @@
 
 
 #include <machine/vm.h>
+#include "opt-tlb_management.h"
 
 /* Fault-type arguments to vm_fault() */
 #define VM_FAULT_READ        0    /* A read was attempted */
@@ -58,5 +59,8 @@ void free_kpages(vaddr_t addr);
 /* TLB shootdown handling called from interprocessor_interrupt */
 void vm_tlbshootdown(const struct tlbshootdown *);
 
+#if 1
+int tlb_get_victim(void);
+#endif
 
 #endif /* _VM_H_ */

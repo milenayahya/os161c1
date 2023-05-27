@@ -128,5 +128,7 @@ int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
 
 int load_elf(struct vnode *v, vaddr_t *entrypoint);
 
+int tlb_get_victim(void);
+
 
 #endif /* _ADDRSPACE_H_ */

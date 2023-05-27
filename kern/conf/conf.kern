@@ -342,6 +342,9 @@ file      proc/proc.c
 
 file      vm/kmalloc.c
 
+
+
+
 optofffile dumbvm   vm/addrspace.c
 
 #
@@ -387,11 +390,15 @@ defoption hello
 defoption syscalls
 defoption synch
 defoption waitpid
+defoption   tlb_management
+defoption   tlb_testing
+
 file      main/main.c
 file      main/menu.c
 optfile hello main/hello.c
 optfile syscalls syscall/file_syscalls.c 
 optfile syscalls syscall/proc_syscalls.c
+optfile     tlb_management vm/vm_tlb.c
 
 ########################################
 #                                      #
