@@ -37,6 +37,7 @@
 
 #include <vm.h>
 #include "opt-dumbvm.h"
+#include "opt-paging.h"
 
 struct vnode;
 
@@ -57,7 +58,16 @@ struct addrspace {
         paddr_t as_pbase2;
         size_t as_npages2;
         paddr_t as_stackpbase;
+#elif OPT_PAGING
+        vaddr_t as_vbase1;  //base of code segment
+        paddr_t *as_ptable1;
+        size_t as_npages1;
+        vaddr_t as_vbase2;  //base of data segment
+        paddr_t *as_ptable2;
+        size_t as_npages2;
+        paddr_t as_stackpbase;
 #else
+
         /* Put stuff here for your VM system */
 #endif
 };
@@ -128,7 +138,8 @@ int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
 
 int load_elf(struct vnode *v, vaddr_t *entrypoint);
 
-int tlb_get_victim(void);
+
+
 
 
 #endif /* _ADDRSPACE_H_ */

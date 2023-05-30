@@ -358,6 +358,8 @@ as_create(void)
 		return NULL;
 	}
 
+	#if OPT_DUMBVM
+
 	as->as_vbase1 = 0;
 	as->as_pbase1 = 0;
 	as->as_npages1 = 0;
@@ -365,6 +367,18 @@ as_create(void)
 	as->as_pbase2 = 0;
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
+
+	#elif OPT_PAGING
+
+	as->as_vbase1 = 0;
+	as->as_ptable1 = 0;
+	as->as_npages1 = 0;
+	as->as_vbase2 = 0;
+	as->as_ptable2 = 0;
+	as->as_npages2 = 0;
+	as->as_stackpbase = 0;
+
+	#endif
 
 	return as;
 }
