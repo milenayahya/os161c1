@@ -49,10 +49,11 @@
 #include <syscall.h>
 #include <test.h>
 #include <version.h>
+
 #include "autoconf.h"  // for pseudoconfig
 #include "hello.h"
 #include "opt-hello.h"
-
+#include "vmstats.h"
 /*
  * These two pieces of data are maintained by the makefiles and build system.
  * buildconfig is the name of the config file the kernel was configured with.
@@ -193,6 +194,7 @@ sys_reboot(int code)
 		break;
 	    case RB_POWEROFF:
 		kprintf("The system is halted.\n");
+		kprintf("%d tlb faults, %d tlb faults with free, %d tlb faults with replacement, %d tlb invalidations\n",tlb_faults,tlb_faults_with_free,tlb_faults_with_replace, tlb_invalidations);
 		mainbus_poweroff();
 		break;
 	}

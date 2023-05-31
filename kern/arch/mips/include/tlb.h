@@ -27,6 +27,7 @@
  * SUCH DAMAGE.
  */
 
+#include "opt-tlb_testing.h"
 #ifndef _MIPS_TLB_H_
 #define _MIPS_TLB_H_
 

@@ -39,6 +39,7 @@
 #include <addrspace.h>
 #include <vm.h>
 #include "opt-tlb_management.h"
+#include "vmstats.h"
 
 /*
  * Dumb MIPS-only "VM system" that is intended to only be just barely
@@ -321,6 +322,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	/* Disable interrupts on this CPU while frobbing the TLB. */
 	spl = splhigh();
 
+	tlb_faults++;
 	for (i=0; i< NUM_TLB; i++) {
 		tlb_read(&ehi, &elo, i);
 		if (elo & TLBLO_VALID) {
@@ -330,6 +332,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
 		tlb_write(ehi, elo, i);
+		tlb_faults_with_free++;
 		splx(spl);
 		return 0;
 	}
@@ -340,7 +343,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 	int victim = tlb_get_victim();
 	tlb_write(ehi, elo, victim);
+	tlb_faults_with_replace++;
 	kprintf("tlb entry replaced\n");
+	splx(spl);
 	#endif
 	return 0;
 
@@ -406,9 +411,9 @@ as_activate(void)
 	spl = splhigh();
 
 	for (i=0; i<NUM_TLB; i++) {
-		//tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
+		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
 	}
-
+	tlb_invalidations++;
 	splx(spl);
 }
 

@@ -36,8 +36,9 @@ options syscalls
 
 options synch           #Not related to C1 project
 
+options tlb_testing
 options tlb_management
 
-options tlb_testing
 
-options paging
+
+#options paging
