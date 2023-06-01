@@ -36,8 +36,10 @@
 #include <proc.h>
 #include <current.h>
 #include <mips/tlb.h>
-#include <addrspace.h>
+
+#include <coremap.h>
 #include <vm.h>
+#include <addrspace.h>
 #include "opt-tlb_management.h"
 #include "vmstats.h"
 
@@ -70,21 +72,21 @@
 /*
  * Wrap ram_stealmem in a spinlock.
  */
-static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
+struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 
 #if DUMBVM_WITH_FREE
 
 /* G.Cabodi - support for free/alloc */
 
-static struct spinlock freemem_lock = SPINLOCK_INITIALIZER;
+struct spinlock freemem_lock = SPINLOCK_INITIALIZER;
 
-static unsigned char *freeRamFrames = NULL;
+unsigned char *freeRamFrames = NULL;
 static unsigned long *allocSize = NULL;
-static int nRamFrames = 0;
+int nRamFrames = 0;
 
 static int allocTableActive = 0;
 
-static int isTableActive () {
+int isTableActive () {
   int active;
   spinlock_acquire(&freemem_lock);
   active = allocTableActive;
@@ -189,7 +191,7 @@ getppages(unsigned long npages)
   return addr;
 }
 
-static int 
+int 
 freeppages(paddr_t addr, unsigned long npages){
   long i, first, np=(long)npages;	
 
@@ -362,8 +364,17 @@ as_create(void)
 	if (as==NULL) {
 		return NULL;
 	}
+	#if OPT_PAGING
 
-	#if OPT_DUMBVM
+	as->as_vbase1 = 0;
+	as->as_ptable1 = 0;
+	as->as_npages1 = 0;
+	as->as_vbase2 = 0;
+	as->as_ptable2 = 0;
+	as->as_npages2 = 0;
+	as->as_stackpbase = 0;
+
+	#else
 
 	as->as_vbase1 = 0;
 	as->as_pbase1 = 0;
@@ -373,15 +384,7 @@ as_create(void)
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
 
-	#elif OPT_PAGING
-
-	as->as_vbase1 = 0;
-	as->as_ptable1 = 0;
-	as->as_npages1 = 0;
-	as->as_vbase2 = 0;
-	as->as_ptable2 = 0;
-	as->as_npages2 = 0;
-	as->as_stackpbase = 0;
+	
 
 	#endif
 
@@ -464,16 +467,50 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 	return ENOSYS;
 }
 
+#if OPT_PAGING
+static void as_zero_region(paddr_t * ptable, unsigned long npages){
+	for(int i=0;i<npages;i++){
+		bzero((void *) PADDR_TO_KVADDR(ptable[i],PAGE_SIZE));
+	}
+}
+#else
 static
 void
-as_zero_region(paddr_t paddr, unsigned npages)
+as_zero_region(paddr_t paddr, unsigned long npages)
 {
 	bzero((void *)PADDR_TO_KVADDR(paddr), npages * PAGE_SIZE);
-}
 
+
+}
+#endif
 int
 as_prepare_load(struct addrspace *as)
 {
+#if OPT_PAGING
+	KASSERT(as->as_ptable1 == 0);
+	KASSERT(as->as_ptable2 == 0);
+	KASSERT(as->as_stackpbase == 0);
+
+	as->as_ptable1 = getfreeuserpages(as->as_npages1);
+	if (as->as_pbase1 == 0) {
+		return ENOMEM;
+	}
+
+	as->as_ptable2 = getfreeuserpages(as->as_npages2);
+	if (as->as_pbase2 == 0) {
+		return ENOMEM;
+	}
+
+	as->as_stackpbase = getfreeuserpages(DUMBVM_STACKPAGES);
+	if (as->as_stackpbase == 0) {
+		return ENOMEM;
+	}
+	as_zero_region(as->as_ptable1, as->as_npages1);
+	as_zero_region(as->as_ptable2, as->as_npages2);
+	as_zero_region(as->as_stackpbase, DUMBVM_STACKPAGES);
+
+
+#else
 	KASSERT(as->as_pbase1 == 0);
 	KASSERT(as->as_pbase2 == 0);
 	KASSERT(as->as_stackpbase == 0);
@@ -498,6 +535,8 @@ as_prepare_load(struct addrspace *as)
 	as_zero_region(as->as_pbase1, as->as_npages1);
 	as_zero_region(as->as_pbase2, as->as_npages2);
 	as_zero_region(as->as_stackpbase, DUMBVM_STACKPAGES);
+
+#endif
 
 	return 0;
 }

@@ -9,5 +9,6 @@ dumbvm.o: ../../arch/mips/vm/dumbvm.c ../../include/types.h \
  includelinks/machine/current.h ../../include/thread.h \
  ../../include/array.h includelinks/machine/thread.h \
  ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
- includelinks/mips/tlb.h ../../include/addrspace.h ../../include/vm.h \
- opt-tlb_management.h opt-dumbvm.h
+ includelinks/mips/tlb.h opt-tlb_testing.h ../../include/coremap.h \
+ ../../include/vm.h opt-tlb_management.h ../../include/addrspace.h \
+ opt-dumbvm.h opt-paging.h ../../include/vmstats.h

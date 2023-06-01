@@ -50,15 +50,7 @@ struct vnode;
  */
 
 struct addrspace {
-#if OPT_DUMBVM
-        vaddr_t as_vbase1;  //base of code segment
-        paddr_t as_pbase1;
-        size_t as_npages1;
-        vaddr_t as_vbase2;  //base of data segment
-        paddr_t as_pbase2;
-        size_t as_npages2;
-        paddr_t as_stackpbase;
-#elif OPT_PAGING
+#if OPT_PAGING
         vaddr_t as_vbase1;  //base of code segment
         paddr_t *as_ptable1;
         size_t as_npages1;
@@ -67,10 +59,24 @@ struct addrspace {
         size_t as_npages2;
         paddr_t as_stackpbase;
 #else
-
+        vaddr_t as_vbase1;  //base of code segment
+        paddr_t as_pbase1;
+        size_t as_npages1;
+        vaddr_t as_vbase2;  //base of data segment
+        paddr_t as_pbase2;
+        size_t as_npages2;
+        paddr_t as_stackpbase;
         /* Put stuff here for your VM system */
 #endif
 };
+
+
+struct spinlock stealmem_lock;
+struct spinlock freemem_lock;
+
+unsigned char *freeRamFrames;
+
+int nRamFrames;
 
 /*
  * Functions in addrspace.c:
@@ -127,7 +133,7 @@ int               as_define_region(struct addrspace *as,
 int               as_prepare_load(struct addrspace *as);
 int               as_complete_load(struct addrspace *as);
 int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
-
+int               isTableActive();
 
 /*
  * Functions in loadelf.c
