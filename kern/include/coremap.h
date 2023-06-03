@@ -16,3 +16,5 @@ paddr_t *getuserppages(unsigned long npages);
 
 paddr_t *alloc_upages_from_ram(unsigned long npages);
 
+void destroy_ptable(paddr_t *table, long npages);
+

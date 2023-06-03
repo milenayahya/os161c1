@@ -284,6 +284,41 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		return EFAULT;
 	}
 
+	#if OPT_PAGING
+	KASSERT(as->as_vbase1!=0);
+	KASSERT(as->as_ptable1!=0);
+	KASSERT(as->as_npages1!=0);
+	KASSERT(as->as_vbase2!=0);
+	KASSERT(as->as_ptable2!=0);
+	KASSERT(as->as_npages2!=0);
+	KASSERT(as->as_stackbase!=0);
+	KASSERT((as->as_vbase1 & PAGE_FRAME) == as->as_vbase1);
+	KASSERT((as->as_vbase2 & PAGE_FRAME) == as->as_vbase2);
+	KASSERT((as->as_stackpbase & PAGE_FRAME) == as->as_stackpbase);
+
+	vbase1 = as->as_vbase1;
+	vtop1 = vbase1 + as->as_npages1 * PAGE_SIZE;
+	vbase2 = as->as_vbase2;
+	vtop2 = vbase2 + as->as_npages2 * PAGE_SIZE;
+	stackbase = USERSTACK - DUMBVM_STACKPAGES * PAGE_SIZE;
+	stacktop = USERSTACK;
+
+	if (faultaddress >= vbase1 && faultaddress < vtop1) {
+		long frame=(long) ((faultaddr - vbase1)/PAGE_SIZE);
+		paddr = as->as_ptable1[frame]
+	}
+	else if (faultaddress >= vbase2 && faultaddress < vtop2) {
+		long frame=(long) ((faultaddr - vbase2)/PAGE_SIZE);
+		paddr = as->as_ptable2[frame]
+	}
+	else if (faultaddress >= stackbase && faultaddress < stacktop) {
+		long frame=(long) ((faultaddr - vbase2)/PAGE_SIZE);
+		paddr = (faultaddress - stackbase) + as->as_stackpbase;
+	}
+	else {
+		return EFAULT;
+	}
+	#else
 	/* Assert that the address space has been set up properly. */
 	KASSERT(as->as_vbase1 != 0);
 	KASSERT(as->as_pbase1 != 0);
@@ -317,7 +352,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	else {
 		return EFAULT;
 	}
-
+	#endif
 	/* make sure it's page-aligned */
 	KASSERT((paddr & PAGE_FRAME) == paddr);
 
@@ -393,9 +428,15 @@ as_create(void)
 
 void as_destroy(struct addrspace *as){
   dumbvm_can_sleep();
+  #if OPT_PAGING
+  	destroy_ptable(as->as_ptable1, as->as_npages1);
+	destroy_ptable(as->as_ptable2, as->as_npages2);
+  #else
   freeppages(as->as_pbase1, as->as_npages1);
   freeppages(as->as_pbase2, as->as_npages2);
+  #endif
   freeppages(as->as_stackpbase, DUMBVM_STACKPAGES);
+  
   kfree(as);
 }
 

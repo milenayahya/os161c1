@@ -77,3 +77,18 @@ paddr_t *alloc_upages_from_ram(unsigned long npages){
     return newtable;
     
 }
+
+void destroy_ptable(paddr_t *ptable, long npages){
+    long index, i;
+    if(!isTableActive())
+        return 0;
+    KASSERT(ptable!=0);
+    spinlock_acquire(&stealmem_lock);
+    for(i=0;i<npages;i++){
+
+        index=(long)(ptable[i]/PAGE_SIZE);
+        KASSERT(nRamFrames>index);
+        freeRamFrames[index]=1;   //Converts physical address at i in ptable in the corresponding index infreeRamFrames nad frees it
+    }
+    spinlock_release(&stealmem_lock);
+}
