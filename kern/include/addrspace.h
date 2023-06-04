@@ -75,6 +75,7 @@ struct spinlock stealmem_lock;
 struct spinlock freemem_lock;
 
 unsigned char *freeRamFrames;
+unsigned long *allocSize;
 
 int nRamFrames;
 

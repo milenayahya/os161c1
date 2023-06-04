@@ -81,7 +81,7 @@ struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 struct spinlock freemem_lock = SPINLOCK_INITIALIZER;
 
 unsigned char *freeRamFrames = NULL;
-static unsigned long *allocSize = NULL;
+unsigned long *allocSize = NULL;
 int nRamFrames = 0;
 
 int allocTableActive = 0;
@@ -244,7 +244,7 @@ vm_tlbshootdown(const struct tlbshootdown *ts)
 
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
-{
+ {
 	vaddr_t vbase1, vtop1, vbase2, vtop2, stackbase, stacktop;
 	paddr_t paddr;
 	int i;
