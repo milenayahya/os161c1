@@ -75,7 +75,10 @@ paddr_t *getuserppages(unsigned long npages){
     }
     if(frames!=0 && isTableActive()){
         spinlock_acquire(&freemem_lock);
-        allocSize[long (frames[0]/PAGE_SIZE)] = npages;
+        KASSERT(allocSize!=NULL);
+        long index=(long) (frames[0]/PAGE_SIZE);
+        KASSERT(index< nRamFrames);
+        allocSize[index] = npages;
         spinlock_release(&freemem_lock);
     }
 
@@ -95,6 +98,7 @@ void alloc_upages_from_ram(unsigned long npages, unsigned long offset, paddr_t *
         ptable[i]=firstaddr+PAGE_SIZE*i;
     }
     spinlock_release(&stealmem_lock);
+
 }
 
 void destroy_ptable(paddr_t *ptable, long npages){
@@ -122,14 +126,15 @@ void destroy_ptable(paddr_t *ptable, long npages){
 paddr_t *
 getfreeppagesCONTIG(unsigned long npages) {
   paddr_t *addr;	
-  addr = (paddr_t *)kmalloc(sizeof(long)*(npages));
+  addr = (paddr_t *)kmalloc(sizeof(paddr_t)*(npages));
   long i, first, found, np = (long)npages;
 
   if (!isTableActive()) {
     kfree(addr);
     return 0; 
-
   }
+
+
   spinlock_acquire(&freemem_lock);
   for (i=0,first=found=-1; i<nRamFrames; i++) {
     if (freeRamFrames[i]) {
@@ -144,8 +149,9 @@ getfreeppagesCONTIG(unsigned long npages) {
 	
   if (found>=0) {
     for (i=found; i<found+np; i++) {
-      freeRamFrames[i] = (unsigned char)0;
-      addr[i] = (paddr_t) i*PAGE_SIZE;
+      freeRamFrames[i] = (unsigned char)0;      //occupies frames and stores the relative address
+      //addr[i] = (paddr_t) i*PAGE_SIZE;           //FOUND IT!!!
+      addr[i-found]=(paddr_t) i*PAGE_SIZE;
     }
     allocSize[found] = np;
     
