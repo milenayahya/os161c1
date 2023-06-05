@@ -41,8 +41,8 @@
 #include <err.h>
 
 /* Larger than physical memory */
-#define SIZE  (144*1024)
-
+//#define SIZE  (144*1024)
+#define SIZE 1024
 
 /*
  * Quicksort.

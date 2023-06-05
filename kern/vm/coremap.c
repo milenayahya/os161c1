@@ -2,13 +2,11 @@
 
 
 //gets noncontiguous free physical pages
-paddr_t * getfreeuserpages(unsigned long *npages) {
+paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * firstpaddr) {
     
     long i, j, np = (long)*npages;
-    paddr_t *firstpaddr;
     long found =0;  //it is the number of free pages found
 
-    firstpaddr = (paddr_t *)kmalloc(sizeof(long)* (*npages));
     
     if (!isTableActive()) return 0;
 
@@ -63,42 +61,54 @@ paddr_t * getfreeuserpages(unsigned long *npages) {
 
 paddr_t *getuserppages(unsigned long npages){
     paddr_t *frames;
-    //unsigned long remainder=npages;
-    //frames=getfreeuserpages(&remainder);
-    frames=getfreeppagesCONTIG( npages);
+
+    frames=(paddr_t *)kmalloc(sizeof(paddr_t)*npages);
+
+    unsigned long remainder=npages;
+    frames=getfreeuserpages(&remainder, frames);
+
+    //frames=getfreeppagesCONTIG( npages, frames); !!!!previous implementation!!!
+
     //getfreeuserpages changes the variable remainder so it becomes the number of pages 
     //still unallocated and requiring a ram_stealmem
     
-    if(frames==0){
-        frames=(paddr_t *)kmalloc(sizeof(paddr_t)*npages);
-        alloc_upages_from_ram(npages, 0, frames);       
+    
+    if(frames!=0 && isTableActive() && (remainder==0 || alloc_upages_from_ram(remainder, npages-remainder, frames))){
+          spinlock_acquire(&freemem_lock);
+          KASSERT(allocSize!=NULL);
+          long index=(long) (frames[0]/PAGE_SIZE);
+          KASSERT(index< nRamFrames);
+          allocSize[index] = npages;
+          spinlock_release(&freemem_lock);
+          return frames;
+    }else{
+      kfree(frames);
+      return 0;
     }
-    if(frames!=0 && isTableActive()){
-        spinlock_acquire(&freemem_lock);
-        KASSERT(allocSize!=NULL);
-        long index=(long) (frames[0]/PAGE_SIZE);
-        KASSERT(index< nRamFrames);
-        allocSize[index] = npages;
-        spinlock_release(&freemem_lock);
-    }
-
-    return frames;
+    
+    
 } 
 
 /*
 *   Stores physical addresses of stolen frames in the array ptable starting at the offset until it stores npages-offset pages
-*
+* 
 */
-void alloc_upages_from_ram(unsigned long npages, unsigned long offset, paddr_t *ptable){
+int alloc_upages_from_ram(unsigned long npages, unsigned long offset, paddr_t *ptable){
+    unsigned long i;
     spinlock_acquire(&stealmem_lock);
     paddr_t firstaddr=ram_stealmem(npages);
-    KASSERT(firstaddr!=0);
+    if(firstaddr==0){
+      for(i = 0; i< npages; i++)
+        freeRamFrames[(int)ptable[i]/PAGE_SIZE] = 1; //loop on page table and free the corresponding freeRamframes
+      return 0;
+    }
+      
     //placing the physical addresses stolen in array newtable
     for(unsigned long i=offset; i<npages;i++){
         ptable[i]=firstaddr+PAGE_SIZE*i;
     }
     spinlock_release(&stealmem_lock);
-
+    return 1;
 }
 
 void destroy_ptable(paddr_t *ptable, long npages){
@@ -122,7 +132,12 @@ void destroy_ptable(paddr_t *ptable, long npages){
 //DUMB COREMAP
 
 
-//Ccontiguous page table
+/*
+* Contiguous page table
+* 
+* [Deprecated]
+*
+*/
 paddr_t *
 getfreeppagesCONTIG(unsigned long npages) {
   paddr_t *addr;	

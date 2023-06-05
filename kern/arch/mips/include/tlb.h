@@ -103,7 +103,7 @@ int tlb_probe(uint32_t entryhi, uint32_t entrylo);
 #if OPT_TLB_TESTING
 #define NUM_TLB 4
 #else
-#define NUM_TLB 4
+#define NUM_TLB 64
 
 #endif
 
