@@ -393,6 +393,7 @@ defoption waitpid
 defoption   tlb_management
 defoption   tlb_testing
 defoption   paging
+defoption on_demand
 
 file      main/main.c
 file      main/menu.c

@@ -40,6 +40,7 @@
 #include <coremap.h>
 //#include <vm.h>
 #include <addrspace.h>
+#include "opt-on_demand.h"
 #include "opt-tlb_management.h"
 #include "vmstats.h"
 
@@ -307,10 +308,18 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	if (faultaddress >= vbase1 && faultaddress < vtop1) {
 		long frame=(long) ((faultaddress - vbase1)/PAGE_SIZE);
 		paddr = as->as_ptable1[frame];
+		if (paddr == 0){ //the page is not already loaded in memory
+		
+		load_page(as, curproc->p_cwd,as->seg_header1.p_offset,faultaddress, PAGE_SIZE, as->seg_header1.p_filesz, as->seg_header1.p_flags & PF_X );
+	}
 	}
 	else if (faultaddress >= vbase2 && faultaddress < vtop2) {
 		long frame=(long) ((faultaddress - vbase2)/PAGE_SIZE);
 		paddr = as->as_ptable2[frame];
+		if (paddr == 0){ //the page is not already loaded in memory
+		
+		load_page(as, curproc->p_cwd,as->seg_header2.p_offset,faultaddress, PAGE_SIZE, as->seg_header2.p_filesz, as->seg_header2.p_flags & PF_X);
+	}
 	}
 	else if (faultaddress >= stackbase && faultaddress < stacktop) {
 		long frame=(long) ((faultaddress - stackbase)/PAGE_SIZE);
@@ -319,6 +328,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	else {
 		return EFAULT;
 	}
+	
 	#else
 	/* Assert that the address space has been set up properly. */
 	KASSERT(as->as_vbase1 != 0);
@@ -352,6 +362,10 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	}
 	else {
 		return EFAULT;
+	}
+
+	if(paddr==0){
+		//load page
 	}
 	#endif
 	/* make sure it's page-aligned */
@@ -409,7 +423,10 @@ as_create(void)
 	as->as_ptable2 = 0;
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
-
+	#if OPT_ON_DEMAND
+	as->seg_header1=0;
+	as->seg_header2=0;
+	#endif
 	#else
 
 	as->as_vbase1 = 0;
@@ -530,28 +547,54 @@ as_zero_region(paddr_t paddr, unsigned long npages)
 int
 as_prepare_load(struct addrspace *as)
 {
+
 #if OPT_PAGING
 	KASSERT(as->as_ptable1 == 0);
 	KASSERT(as->as_ptable2 == 0);
 	KASSERT(as->as_stackpbase == 0);
+	#if OPT_ON_DEMAND
+		as->as_ptable1 = (paddr_t *)kmalloc(sizeof(paddr_t)*npages1);
+		bzero((void *)PADDR_TO_KVADDR(as->as_ptable1), sizeof(paddr_t)*npages1);
+		
+		if (as->as_ptable1 == 0) {
+			return ENOMEM;
+		}
 
-	as->as_ptable1 = getuserppages(as->as_npages1);
-	if (as->as_ptable1 == 0) {
-		return ENOMEM;
-	}
+		as->as_ptable2 =(paddr_t *)kmalloc(sizeof(paddr_t)*npages2);
+		bzero((void *)PADDR_TO_KVADDR(as->as_ptable2), sizeof(paddr_t)*npages2 );
 
-	as->as_ptable2 = getuserppages(as->as_npages2);
-	if (as->as_ptable2 == 0) {
-		return ENOMEM;
-	}
+		if (as->as_ptable2 == 0) {
+			return ENOMEM;
+		}
 
-	as->as_stackpbase = getuserppages(DUMBVM_STACKPAGES);
-	if (as->as_stackpbase == 0) {
-		return ENOMEM;
-	}
-	as_zero_region(as->as_ptable1, as->as_npages1);
-	as_zero_region(as->as_ptable2, as->as_npages2);
-	as_zero_region(as->as_stackpbase, DUMBVM_STACKPAGES);
+		as->as_stackpbase = (paddr_t *)kmalloc(sizeof(paddr_t)*DUMBVM_STACKPAGES);
+		bzero((void *)PADDR_TO_KVADDR(as->as_stackbase), sizeof(paddr_t)*DUMBVM_STACKPAGES);
+
+		if (as->as_stackpbase == 0) {
+			return ENOMEM;
+		}
+		// as_zero_region(as->as_ptable1, as->as_npages1);
+		// as_zero_region(as->as_ptable2, as->as_npages2);
+		// as_zero_region(as->as_stackpbase, DUMBVM_STACKPAGES);
+	#else
+		as->as_ptable1 = getuserppages(as->as_npages1);
+		if (as->as_ptable1 == 0) {
+			return ENOMEM;
+		}
+
+		as->as_ptable2 = getuserppages(as->as_npages2);
+		if (as->as_ptable2 == 0) {
+			return ENOMEM;
+		}
+
+		as->as_stackpbase = getuserppages(DUMBVM_STACKPAGES);
+		if (as->as_stackpbase == 0) {
+			return ENOMEM;
+		}
+		as_zero_region(as->as_ptable1, as->as_npages1);
+		as_zero_region(as->as_ptable2, as->as_npages2);
+		as_zero_region(as->as_stackpbase, DUMBVM_STACKPAGES);
+	#endif
 
 
 #else

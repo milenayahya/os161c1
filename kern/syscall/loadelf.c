@@ -59,7 +59,7 @@
 #include <addrspace.h>
 #include <vnode.h>
 #include <elf.h>
-
+#include "opt-on_demand.h"
 /*
  * Load a segment at virtual address VADDR. The segment in memory
  * extends from VADDR up to (but not including) VADDR+MEMSIZE. The
@@ -251,6 +251,14 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 		if (result) {
 			return result;
 		}
+
+		#if OPT_ON_DEMAND
+		if(i==0){
+			as->seg_header1=ph;
+		}else if(i==1){
+			as->seg_header2=ph;
+		}
+		#endif
 	}
 
 	result = as_prepare_load(as);
@@ -287,10 +295,16 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 				ph.p_type);
 			return ENOEXEC;
 		}
+		//Untill here loads segments headers
 
+		//from now on we can mess with the code
+		#if OPT_ON_DEMAND
+		//Load First Page
+		#else
 		result = load_segment(as, v, ph.p_offset, ph.p_vaddr,
 				      ph.p_memsz, ph.p_filesz,
 				      ph.p_flags & PF_X);
+		#endif
 		if (result) {
 			return result;
 		}

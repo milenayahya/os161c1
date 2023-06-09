@@ -34,7 +34,7 @@
  * Address space structure and operations.
  */
 
-
+#include <elf.h>
 #include <vm.h>
 #include "opt-dumbvm.h"
 #include "opt-paging.h"
@@ -46,7 +46,8 @@ struct vnode;
  * Address space - data structure associated with the virtual memory
  * space of a process.
  *
- * You write this.
+ * Virtual address space is contigous and is used to retrieve the index of the page table through:
+ * (virtual address - vbase)/PAGE_SIZE, if the address at ptable[i] is 0 it means that the page is not in memory
  */
 
 struct addrspace {
@@ -58,6 +59,10 @@ struct addrspace {
         paddr_t *as_ptable2;
         size_t as_npages2;
         paddr_t *as_stackpbase; //no need o
+        #if OPT_ON_DEMAND
+        Elf32_Phdr seg_header1;
+        Elf32_Phdr seg_header2;
+        #endif
 #else
         vaddr_t as_vbase1;  //base of code segment
         paddr_t as_pbase1;

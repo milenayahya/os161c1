@@ -2,7 +2,7 @@
 
 
 //gets noncontiguous free physical pages
-paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * firstpaddr) {
+paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * ptable) {
     
     long i, j, np = (long)*npages;
     long found =0;  //it is the number of free pages found
@@ -20,7 +20,7 @@ paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * firstpaddr) {
             //add to array every new available page
             //transfrom values in firstpaddr to paddr_t
             
-            firstpaddr[j]=(paddr_t) i*PAGE_SIZE;
+            ptable[j]=(paddr_t) i*PAGE_SIZE;
             freeRamFrames[i]=0;
             j++;
             if(found>= np) break;
@@ -37,7 +37,7 @@ paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * firstpaddr) {
 
     spinlock_release(&freemem_lock);
 
-    return firstpaddr;
+    return ptable;
     
 }
 
@@ -66,7 +66,6 @@ paddr_t *getuserppages(unsigned long npages){
 
     unsigned long remainder=npages;
     frames=getfreeuserpages(&remainder, frames);
-
     //frames=getfreeppagesCONTIG( npages, frames); !!!!previous implementation!!!
 
     //getfreeuserpages changes the variable remainder so it becomes the number of pages 

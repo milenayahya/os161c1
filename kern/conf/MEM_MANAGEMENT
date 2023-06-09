@@ -39,3 +39,4 @@ options synch           #Not related to C1 project
 options tlb_management
 
 options paging
+options on_demand
