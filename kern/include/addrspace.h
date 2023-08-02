@@ -38,6 +38,7 @@
 #include <vm.h>
 #include "opt-dumbvm.h"
 #include "opt-paging.h"
+#include "opt-on_demand.h"
 
 struct vnode;
 

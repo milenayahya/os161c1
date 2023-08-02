@@ -74,6 +74,9 @@
  * change this code to not use uiomove, be sure to check for this case
  * explicitly.
  */
+
+#if OPT_ON_DEMAND
+#else
 static
 int
 load_segment(struct addrspace *as, struct vnode *v,
@@ -144,6 +147,7 @@ load_segment(struct addrspace *as, struct vnode *v,
 
 	return result;
 }
+#endif
 
 /*
  * Load an ELF executable user program into the current address space.

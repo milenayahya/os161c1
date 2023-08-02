@@ -11,4 +11,5 @@ coremap.o: ../../vm/coremap.c ../../include/coremap.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h includelinks/mips/tlb.h \
  opt-tlb_testing.h ../../include/vm.h opt-tlb_management.h \
- ../../include/addrspace.h opt-dumbvm.h opt-paging.h
+ ../../include/addrspace.h ../../include/elf.h includelinks/machine/elf.h \
+ opt-dumbvm.h opt-paging.h opt-on_demand.h

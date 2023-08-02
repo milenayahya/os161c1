@@ -11,4 +11,6 @@ dumbvm.o: ../../arch/mips/vm/dumbvm.c ../../include/types.h \
  ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
  includelinks/mips/tlb.h opt-tlb_testing.h ../../include/coremap.h \
  ../../include/vm.h opt-tlb_management.h ../../include/addrspace.h \
- opt-dumbvm.h opt-paging.h ../../include/vmstats.h
+ ../../include/elf.h includelinks/machine/elf.h opt-dumbvm.h opt-paging.h \
+ opt-on_demand.h ../../include/segments.h ../../include/uio.h \
+ ../../include/kern/iovec.h ../../include/vnode.h ../../include/vmstats.h

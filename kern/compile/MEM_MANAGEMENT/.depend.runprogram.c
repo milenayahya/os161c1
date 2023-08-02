@@ -8,6 +8,7 @@ runprogram.o: ../../syscall/runprogram.c ../../include/types.h \
  ../../include/thread.h ../../include/array.h ../../include/threadlist.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h ../../include/addrspace.h \
- ../../include/vm.h includelinks/machine/vm.h opt-tlb_management.h \
- opt-dumbvm.h opt-paging.h ../../include/vfs.h ../../include/syscall.h \
+ ../../include/elf.h includelinks/machine/elf.h ../../include/vm.h \
+ includelinks/machine/vm.h opt-tlb_management.h opt-dumbvm.h opt-paging.h \
+ opt-on_demand.h ../../include/vfs.h ../../include/syscall.h \
  opt-syscalls.h ../../include/test.h
