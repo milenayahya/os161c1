@@ -97,8 +97,10 @@ int alloc_upages_from_ram(unsigned long npages, unsigned long offset, paddr_t *p
     spinlock_acquire(&stealmem_lock);
     paddr_t firstaddr=ram_stealmem(npages);
     if(firstaddr==0){
-      for(i = 0; i< npages; i++)
-        freeRamFrames[(int)ptable[i]/PAGE_SIZE] = 1; //loop on page table and free the corresponding freeRamframes
+      for(i = 0; i< npages; i++)                       // If ram is full free evertything
+        freeRamFrames[(int)ptable[i]/PAGE_SIZE] = 1;  //loop on page table and free the corresponding freeRamframes
+
+      spinlock_release(&stealmem_lock);             
       return 0;
     }
       

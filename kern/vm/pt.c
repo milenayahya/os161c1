@@ -21,7 +21,7 @@ paddr_t *init_ptable(unsigned long npages){
 paddr_t getuserppage(paddr_t * ptable){
     paddr_t frame = getfreeuserpage();
     if (frame == 0)
-    
+        //We have to steal memory
 
 }
 
@@ -41,4 +41,5 @@ paddr_t getfreeuserpage(){ //looks for an available frame and allocates it to a 
         }
     }
     spinlock_release(&freemem_lock);
+    return 0;
 }
