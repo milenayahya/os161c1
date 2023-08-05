@@ -35,6 +35,7 @@ options dumbvm			# Chewing gum and baling wire.
 options syscalls
 
 options synch           #Not related to C1 project
+options waitpid
 
 options tlb_management
 

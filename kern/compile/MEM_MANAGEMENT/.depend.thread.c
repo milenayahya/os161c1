@@ -4,12 +4,12 @@ thread.o: ../../thread/thread.c ../../include/types.h \
  ../../include/lib.h ../../include/cdefs.h opt-noasserts.h \
  ../../include/array.h ../../include/cpu.h ../../include/spinlock.h \
  ../../include/hangman.h opt-hangman.h includelinks/machine/spinlock.h \
- ../../include/threadlist.h includelinks/machine/vm.h ../../include/spl.h \
- ../../include/wchan.h ../../include/thread.h \
+ ../../include/threadlist.h includelinks/machine/vm.h opt-paging.h \
+ ../../include/spl.h ../../include/wchan.h ../../include/thread.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h ../../include/threadprivate.h \
  ../../include/proc.h opt-waitpid.h ../../include/current.h \
  includelinks/machine/current.h ../../include/synch.h opt-synch.h \
  ../../include/addrspace.h ../../include/elf.h includelinks/machine/elf.h \
- ../../include/vm.h opt-tlb_management.h opt-dumbvm.h opt-paging.h \
- opt-on_demand.h ../../include/mainbus.h ../../include/vnode.h
+ ../../include/vm.h opt-tlb_management.h opt-dumbvm.h opt-on_demand.h \
+ ../../include/mainbus.h ../../include/vnode.h

@@ -42,6 +42,11 @@ static paddr_t lastpaddr;   /* one past end of last free physical page */
  * Called very early in system boot to figure out how much physical
  * RAM is available.
  */
+
+unsigned long get_stolenmem(){
+	return (unsigned long) (firstpaddr/PAGE_SIZE);
+}
+
 void
 ram_bootstrap(void)
 {

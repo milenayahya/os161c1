@@ -10,5 +10,5 @@ segments.o: ../../vm/segments.c ../../include/segments.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h ../../include/addrspace.h \
  ../../include/elf.h includelinks/machine/elf.h ../../include/vm.h \
- includelinks/machine/vm.h opt-tlb_management.h opt-dumbvm.h opt-paging.h \
+ includelinks/machine/vm.h opt-paging.h opt-tlb_management.h opt-dumbvm.h \
  opt-on_demand.h ../../include/vnode.h

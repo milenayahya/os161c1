@@ -4,4 +4,5 @@ lrandom_att.o: ../../dev/lamebus/lrandom_att.c ../../include/types.h \
  opt-noasserts.h ../../dev/lamebus/lamebus.h ../../include/cpu.h \
  ../../include/spinlock.h ../../include/hangman.h opt-hangman.h \
  includelinks/machine/spinlock.h ../../include/threadlist.h \
- includelinks/machine/vm.h ../../dev/lamebus/lrandom.h autoconf.h
+ includelinks/machine/vm.h opt-paging.h ../../dev/lamebus/lrandom.h \
+ autoconf.h

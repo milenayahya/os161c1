@@ -386,10 +386,10 @@ file      syscall/time_syscalls.c
 #
 # Startup and initialization
 #
-defoption hello
-defoption syscalls
-defoption synch
-defoption waitpid
+defoption   hello
+defoption   syscalls
+defoption   synch
+defoption   waitpid
 defoption   tlb_management
 defoption   tlb_testing
 defoption   paging
@@ -402,8 +402,8 @@ optfile     syscalls        syscall/file_syscalls.c
 optfile     syscalls        syscall/proc_syscalls.c
 optfile     tlb_management  vm/vm_tlb.c
 optfile     paging          vm/coremap.c
-optfile     paging          vm/pt.c
 optfile     paging          vm/segments.c
+optfile     on_demand       vm/pt.c
 
 ########################################
 #                                      #

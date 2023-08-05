@@ -1,11 +1,12 @@
 #include <coremap.h>
 
+//unsigned long get_stolenmem(void);
 
 //gets noncontiguous free physical pages
 paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * ptable) {
     
-    long i, j, np = (long)*npages;
-    long found =0;  //it is the number of free pages found
+    unsigned long i, j, np = (long)*npages;
+    unsigned long found =0;  //it is the number of free pages found
 
     
     if (!isTableActive()) return 0;
@@ -14,7 +15,7 @@ paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * ptable) {
    
     j=0;
 
-    for(i =0; i<nRamFrames; i++){
+    for(i =0; i< nRamFrames; i++){
         if(freeRamFrames[i]==1){
             found++; //add the nb of pages found
             //add to array every new available page
@@ -120,7 +121,8 @@ void destroy_ptable(paddr_t *ptable, long npages){
     KASSERT(ptable!=0);
     spinlock_acquire(&freemem_lock);
     for(i=0;i<npages;i++){
-
+        if(ptable[i]==0)
+          continue;
         index=(long)(ptable[i]/PAGE_SIZE);
         KASSERT(nRamFrames>index);
         freeRamFrames[index]=(unsigned char)1;   //Converts physical address at i in ptable in the corresponding index infreeRamFrames nad frees it
