@@ -59,6 +59,8 @@
 #include <addrspace.h>
 #include <vnode.h>
 #include <elf.h>
+#include <segments.h>
+#include <pt.h>
 #include "opt-on_demand.h"
 /*
  * Load a segment at virtual address VADDR. The segment in memory
@@ -304,6 +306,13 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 		//from now on we can mess with the code
 		#if OPT_ON_DEMAND
 		//Load First Page
+		if(as->as_ptable1[0]==0)
+			as->as_ptable1[0]= getuserppage();
+		if(as->as_ptable2[0]==0)
+			as->as_ptable2[0]=getuserppage();
+
+		result = load_page(as, v,ph.p_offset, ph.p_vaddr, ph.p_vaddr, ph.p_flags & PF_X);
+		
 		#else
 		result = load_segment(as, v, ph.p_offset, ph.p_vaddr,
 				      ph.p_memsz, ph.p_filesz,

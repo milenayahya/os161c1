@@ -3,12 +3,9 @@
 
 int
 load_page(struct addrspace *as, struct vnode *v,
-	     off_t offset, vaddr_t vaddr,
-	     size_t memsize, size_t filesize,
+	     off_t offset, vaddr_t vaddr, vaddr_t vbase ,
 	     int is_executable)
 {
-	(void) offset;
-	(void) memsize;
 	struct iovec iov;
 	struct uio u;
 	int result;
@@ -18,15 +15,16 @@ load_page(struct addrspace *as, struct vnode *v,
 	// 	filesize = memsize;
 	// }
 
-	DEBUG(DB_EXEC, "ELF: Loading %lu bytes to 0x%lx\n",
-	      (unsigned long) filesize, (unsigned long) vaddr);
+	// DEBUG(DB_EXEC, "ELF: Loading %lu bytes to 0x%lx\n",
+	//       (unsigned long) filesize, (unsigned long) vaddr);
 
 	iov.iov_ubase = (userptr_t)vaddr;           //Destination
-	iov.iov_len = PAGE_SIZE;		 // length of the memory space
+	iov.iov_len = PAGE_SIZE;		 			// length of the memory space
 	u.uio_iov = &iov;
 	u.uio_iovcnt = 1;                   
-	u.uio_resid = PAGE_SIZE;          //amount to read from the file (Source)
-	u.uio_offset = (off_t) vaddr;        //where we read it from in elf (vaddr) is the same vaddr we give it in the address-space of the process   
+	u.uio_resid = PAGE_SIZE;          			//amount to read from the file (Source)
+//	u.uio_offset = (off_t) vaddr;        		//where we read it from in elf (vaddr) is the same vaddr we give it in the address-space of the process   
+	u.uio_offset= offset + (vaddr - vbase);
 	u.uio_segflg = is_executable ? UIO_USERISPACE : UIO_USERSPACE;
 	u.uio_rw = UIO_READ;
 	u.uio_space = as;

@@ -19,11 +19,11 @@ paddr_t *init_ptable(unsigned long npages){
 
 /// @brief Allocs a single user page
 /// @return the address of the allocated frame, 0 in case of failure to allocate 
-paddr_t getuserppage(paddr_t * ptable){
+paddr_t getuserppage(){
 
     paddr_t frame = getfreeuserpage();
     if (frame == 0)
-        return alloc_upage_from_ram(ptable);
+        return alloc_upage_from_ram();
     else
         return frame;
 
@@ -38,7 +38,7 @@ paddr_t getfreeuserpage(){ //looks for an available frame and allocates it to a 
 
     if (!isTableActive()) return 0;
     spinlock_acquire(&freemem_lock); //mutual exclusion 
-
+    unsigned long i;
 
     for(i =0; i<(get_stolenmem()); i++){
         if(freeRamFrames[i]==1){
@@ -53,8 +53,7 @@ paddr_t getfreeuserpage(){ //looks for an available frame and allocates it to a 
     return 0;
 }
 
-paddr_t alloc_upage_from_ram(paddr_t *ptable){
-    unsigned long i;
+paddr_t alloc_upage_from_ram(){
     spinlock_acquire(&stealmem_lock);
     paddr_t paddr=ram_stealmem(1);
     if(paddr==0){

@@ -41,6 +41,7 @@
 //#include <vm.h>
 #include <segments.h>
 #include <addrspace.h>
+#include <pt.h>
 #include "opt-on_demand.h"
 #include "opt-tlb_management.h"
 #include "vmstats.h"
@@ -311,8 +312,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		paddr = as->as_ptable1[frame];
 		#if OPT_ON_DEMAND
 		if (paddr == 0){ //the page is not already loaded in memory
-		
-			load_page(as, curproc->p_cwd,as->seg_header1.p_offset,faultaddress, PAGE_SIZE, as->seg_header1.p_filesz, as->seg_header1.p_flags & PF_X );
+			paddr=getuserppage();
+			as->as_ptable1[frame]=paddr;
+			load_page(as, curproc->p_cwd,as->seg_header1.p_offset,faultaddress,  as->as_vbase1, as->seg_header1.p_flags & PF_X );
 		
 		}
 		#endif
@@ -322,8 +324,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		paddr = as->as_ptable2[frame];
 		#if OPT_ON_DEMAND
 		if (paddr == 0){ //the page is not already loaded in memory
-		
-			load_page(as, curproc->p_cwd,as->seg_header2.p_offset,faultaddress, PAGE_SIZE, as->seg_header2.p_filesz, as->seg_header2.p_flags & PF_X);
+			paddr=getuserppage();
+			as->as_ptable2[frame]=paddr;
+			load_page(as, curproc->p_cwd,as->seg_header2.p_offset,faultaddress, as->as_vbase2, as->seg_header2.p_flags & PF_X);
 		}
 		#endif
 	
@@ -331,6 +334,13 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	else if (faultaddress >= stackbase && faultaddress < stacktop) {
 		long frame=(long) ((faultaddress - stackbase)/PAGE_SIZE);
 		paddr = as->as_stackpbase[frame];
+		#if OPT_ON_DEMAND
+		if(paddr==0){
+			paddr=getuserppage();
+			as->as_stackpbase[frame]=paddr;
+		}
+			
+		#endif
 	}
 	else {
 		return EFAULT;
@@ -431,8 +441,8 @@ as_create(void)
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
 	#if OPT_ON_DEMAND
-	as->seg_header1=0;
-	as->seg_header2=0;
+	// as->seg_header1=NULL;
+	// as->seg_header2=NULL;
 	#endif
 	#else
 
@@ -535,6 +545,8 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 	return ENOSYS;
 }
 
+#if OPT_ON_DEMAND
+#else
 #if OPT_PAGING
 static void as_zero_region(paddr_t * ptable, unsigned long npages){
 	for(unsigned long i=0;i<npages;i++){
@@ -550,6 +562,7 @@ as_zero_region(paddr_t paddr, unsigned long npages)
 
 
 }
+#endif
 #endif
 int
 as_prepare_load(struct addrspace *as)

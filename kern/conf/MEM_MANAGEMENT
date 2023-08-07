@@ -40,3 +40,4 @@ options waitpid
 options tlb_management
 
 options paging
+options on_demand

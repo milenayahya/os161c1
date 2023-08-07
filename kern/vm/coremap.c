@@ -5,8 +5,8 @@
 //gets noncontiguous free physical pages
 paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * ptable) {
     
-    unsigned long i, j, np = (long)*npages;
-    unsigned long found =0;  //it is the number of free pages found
+    long i, j, np = (long)*npages;
+    long found =0;  //it is the number of free pages found
 
     
     if (!isTableActive()) return 0;
@@ -33,7 +33,7 @@ paddr_t * getfreeuserpages(unsigned long *npages, paddr_t * ptable) {
     
    //setting remainder
 
-    if(found <np)
+    if(found <=np)      //If it's less-equal to the number of pages requested we have to remove the amt found
         *npages -= found;
 
     spinlock_release(&freemem_lock);

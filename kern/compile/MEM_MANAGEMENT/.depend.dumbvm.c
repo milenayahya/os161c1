@@ -14,4 +14,4 @@ dumbvm.o: ../../arch/mips/vm/dumbvm.c ../../include/types.h \
  ../../include/elf.h includelinks/machine/elf.h opt-dumbvm.h \
  opt-on_demand.h includelinks/mips/vm.h ../../include/segments.h \
  ../../include/uio.h ../../include/kern/iovec.h ../../include/vnode.h \
- ../../include/vmstats.h
+ ../../include/pt.h ../../include/vmstats.h

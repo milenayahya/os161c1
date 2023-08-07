@@ -11,4 +11,6 @@ loadelf.o: ../../syscall/loadelf.c ../../include/types.h \
  includelinks/kern/machine/setjmp.h ../../include/addrspace.h \
  ../../include/elf.h includelinks/machine/elf.h ../../include/vm.h \
  includelinks/machine/vm.h opt-paging.h opt-tlb_management.h opt-dumbvm.h \
- opt-on_demand.h ../../include/vnode.h
+ opt-on_demand.h ../../include/vnode.h ../../include/segments.h \
+ ../../include/pt.h ../../include/spl.h ../../include/cpu.h \
+ includelinks/mips/tlb.h opt-tlb_testing.h includelinks/mips/vm.h

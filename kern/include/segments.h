@@ -9,4 +9,6 @@
 #include <elf.h>
 #include "opt-on_demand.h"
 
-int load_page(struct addrspace *as, struct vnode *v, off_t offset, vaddr_t vaddr, size_t memsize,size_t filesize, int is_executable);
+int load_page(struct addrspace *as, struct vnode *v,
+	     off_t offset, vaddr_t vaddr, vaddr_t vbase ,
+	     int is_executable);
