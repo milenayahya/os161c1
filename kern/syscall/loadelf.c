@@ -59,7 +59,9 @@
 #include <addrspace.h>
 #include <vnode.h>
 #include <elf.h>
-
+#include <segments.h>
+#include <pt.h>
+#include "opt-on_demand.h"
 /*
  * Load a segment at virtual address VADDR. The segment in memory
  * extends from VADDR up to (but not including) VADDR+MEMSIZE. The
@@ -74,6 +76,9 @@
  * change this code to not use uiomove, be sure to check for this case
  * explicitly.
  */
+
+#if OPT_ON_DEMAND
+#else
 static
 int
 load_segment(struct addrspace *as, struct vnode *v,
@@ -144,6 +149,7 @@ load_segment(struct addrspace *as, struct vnode *v,
 
 	return result;
 }
+#endif
 
 /*
  * Load an ELF executable user program into the current address space.
@@ -251,6 +257,11 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 		if (result) {
 			return result;
 		}
+
+		#if OPT_ON_DEMAND
+		as_define_segment(as, ph.p_vaddr, ph.p_offset, ph.p_memsz, ph.p_filesz, v,ph.p_flags);
+			
+		#endif
 	}
 
 	result = as_prepare_load(as);
@@ -287,10 +298,26 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 				ph.p_type);
 			return ENOEXEC;
 		}
+		//Untill here loads segments headers
 
+		//from now on we can mess with the code
+		#if OPT_ON_DEMAND
+		//Load First Page
+		if(as->as_ptable1[0]==0)
+			as->as_ptable1[0]= getuserppage();
+		if(as->as_ptable2[0]==0)
+			as->as_ptable2[0]=getuserppage();
+
+		// if(i==0)
+		// 	result = load_page(as, v,as->seg1.offset, as->seg1.offset, as->seg1.vbaseaddr, as->seg1.flags & PF_X);
+		// else if(i==1)
+		// 	result = load_page(as, v,as->seg2.offset, as->seg2.offset, as->seg2.vbaseaddr, as->seg2.flags & PF_X);
+		
+		#else
 		result = load_segment(as, v, ph.p_offset, ph.p_vaddr,
 				      ph.p_memsz, ph.p_filesz,
 				      ph.p_flags & PF_X);
+		#endif
 		if (result) {
 			return result;
 		}

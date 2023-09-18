@@ -23,7 +23,7 @@
 # Kernel config file syntax:
 #
 # The syntax for including the system definition is:
-#
+#q
 #    include conf.kern
 #
 #       This should come first. This is because the system must be
@@ -342,6 +342,9 @@ file      proc/proc.c
 
 file      vm/kmalloc.c
 
+
+
+
 optofffile dumbvm   vm/addrspace.c
 
 #
@@ -383,9 +386,24 @@ file      syscall/time_syscalls.c
 #
 # Startup and initialization
 #
+defoption   hello
+defoption   syscalls
+defoption   synch
+defoption   waitpid
+defoption   tlb_management
+defoption   tlb_testing
+defoption   paging
+defoption   on_demand
 
 file      main/main.c
 file      main/menu.c
+optfile hello main/hello.c
+optfile     syscalls        syscall/file_syscalls.c 
+optfile     syscalls        syscall/proc_syscalls.c
+optfile     tlb_management  vm/vm_tlb.c
+optfile     paging          vm/coremap.c
+optfile     paging          vm/segments.c
+optfile     on_demand       vm/pt.c
 
 ########################################
 #                                      #
@@ -424,12 +442,6 @@ defoption netfs
 # Note that "emufs" is completely contained in the "emu" device.
 #
 
-defoption   syscalls
-optfile     syscalls    syscall/file_syscalls.c
-optfile     syscalls    syscall/proc_syscalls.c
-
-defoption   synch
-defoption   synch_with_sem
 
 ########################################
 #                                      #
@@ -447,3 +459,8 @@ file		test/semunit.c
 file		test/kmalloctest.c
 file		test/fstest.c
 optfile net	test/nettest.c
+
+
+
+
+

@@ -38,11 +38,15 @@ vaddr_t firstfree;   /* first free virtual address; set by start.S */
 static paddr_t firstpaddr;  /* address of first free physical page */
 static paddr_t lastpaddr;   /* one past end of last free physical page */
 
-
 /*
  * Called very early in system boot to figure out how much physical
  * RAM is available.
  */
+
+unsigned long get_stolenmem(){
+	return (unsigned long) (firstpaddr/PAGE_SIZE);
+}
+
 void
 ram_bootstrap(void)
 {
@@ -109,7 +113,6 @@ ram_stealmem(unsigned long npages)
 
 	return paddr;
 }
-
 
 /*
  * This function is intended to be called by the VM system when it

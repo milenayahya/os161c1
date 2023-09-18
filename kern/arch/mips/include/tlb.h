@@ -27,6 +27,7 @@
  * SUCH DAMAGE.
  */
 
+#include "opt-tlb_testing.h"
 #ifndef _MIPS_TLB_H_
 #define _MIPS_TLB_H_
 
@@ -99,7 +100,11 @@ int tlb_probe(uint32_t entryhi, uint32_t entrylo);
  * Number of TLB entries in the processor.
  */
 
-#define NUM_TLB  64
+#if OPT_TLB_TESTING
+#define NUM_TLB 4
+#else
+#define NUM_TLB 64
 
+#endif
 
 #endif /* _MIPS_TLB_H_ */

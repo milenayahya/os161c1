@@ -30,6 +30,8 @@
 #ifndef _MIPS_VM_H_
 #define _MIPS_VM_H_
 
+#include "opt-paging.h"
+
 
 /*
  * Machine-dependent VM system definitions.
@@ -109,7 +111,9 @@ void ram_bootstrap(void);
 paddr_t ram_stealmem(unsigned long npages);
 paddr_t ram_getsize(void);
 paddr_t ram_getfirstfree(void);
-
+#if OPT_PAGING
+unsigned long get_stolenmem(void);
+#endif
 /*
  * TLB shootdown bits.
  *

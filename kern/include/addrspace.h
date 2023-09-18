@@ -34,33 +34,76 @@
  * Address space structure and operations.
  */
 
-
+#include <elf.h>
 #include <vm.h>
 #include "opt-dumbvm.h"
+#include "opt-paging.h"
+#include "opt-on_demand.h"
 
 struct vnode;
 
-
+#define OPT_PAGING 1
+#define OPT_ON_DEMAND 1
 /*
  * Address space - data structure associated with the virtual memory
  * space of a process.
  *
- * You write this.
+ * Virtual address space is contigous and is used to retrieve the index of the page table through:
+ * (virtual address - vbase)/PAGE_SIZE, if the address at ptable[i] is 0 it means that the page is not in memory
  */
+struct segment{
+        vaddr_t vbaseaddr;      //Page-Table infos
+        size_t npages;
+        paddr_t *ptable;
+
+        off_t offset;           //File-content infos
+        size_t memsize;
+        size_t filesize;
+        struct vnode *elf_node;
+        
+        uint32_t flags;
+};
 
 struct addrspace {
-#if OPT_DUMBVM
-        vaddr_t as_vbase1;
+#if OPT_PAGING
+        vaddr_t as_vbase1;  //base of code segment
+        paddr_t *as_ptable1;
+        size_t as_npages1;
+        vaddr_t as_vbase2;  //base of data segment
+        paddr_t *as_ptable2;
+        size_t as_npages2;
+        paddr_t *as_stackpbase; //no need o
+        #if OPT_ON_DEMAND
+        int initialized;
+        struct segment seg1;
+        struct segment seg2;
+        //Elf32_Phdr seg_header1;
+        //Elf32_Phdr seg_header2;
+        #endif
+#else
+        vaddr_t as_vbase1;  //base of code segment
         paddr_t as_pbase1;
         size_t as_npages1;
-        vaddr_t as_vbase2;
+        vaddr_t as_vbase2;  //base of data segment
         paddr_t as_pbase2;
         size_t as_npages2;
         paddr_t as_stackpbase;
-#else
         /* Put stuff here for your VM system */
 #endif
 };
+
+
+
+
+struct spinlock stealmem_lock;
+struct spinlock freemem_lock;
+
+unsigned char *freeRamFrames;
+unsigned long *allocSize;
+
+int nRamFrames;
+
+int allocTableActive;
 
 /*
  * Functions in addrspace.c:
@@ -117,7 +160,8 @@ int               as_define_region(struct addrspace *as,
 int               as_prepare_load(struct addrspace *as);
 int               as_complete_load(struct addrspace *as);
 int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
-
+int               as_define_segment(struct addrspace *as, vaddr_t vbase, off_t offset, size_t memsize , size_t filesize, struct vnode*elf_node, uint32_t flags);
+int               isTableActive (void);
 
 /*
  * Functions in loadelf.c
@@ -127,6 +171,9 @@ int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
  */
 
 int load_elf(struct vnode *v, vaddr_t *entrypoint);
+
+
+
 
 
 #endif /* _ADDRSPACE_H_ */

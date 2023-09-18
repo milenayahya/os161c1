@@ -68,21 +68,21 @@
 /*
  * Wrap ram_stealmem in a spinlock.
  */
-static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
+struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 
 #if DUMBVM_WITH_FREE
 
 /* G.Cabodi - support for free/alloc */
 
-static struct spinlock freemem_lock = SPINLOCK_INITIALIZER;
+struct spinlock freemem_lock = SPINLOCK_INITIALIZER;
 
-static unsigned char *freeRamFrames = NULL;
+unsigned char *freeRamFrames = NULL;
 static unsigned long *allocSize = NULL;
 static int nRamFrames = 0;
 
 static int allocTableActive = 0;
 
-static int isTableActive () {
+int isTableActive () {
   int active;
   spinlock_acquire(&freemem_lock);
   active = allocTableActive;
@@ -300,7 +300,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	vtop2 = vbase2 + as->as_npages2 * PAGE_SIZE;
 	stackbase = USERSTACK - DUMBVM_STACKPAGES * PAGE_SIZE;
 	stacktop = USERSTACK;
-
+	
 	if (faultaddress >= vbase1 && faultaddress < vtop1) {
 		paddr = (faultaddress - vbase1) + as->as_pbase1;
 	}
@@ -319,6 +319,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	/* Disable interrupts on this CPU while frobbing the TLB. */
 	spl = splhigh();
+
+	kprintf("Main DumbVM\n");
 
 	for (i=0; i<NUM_TLB; i++) {
 		tlb_read(&ehi, &elo, i);
@@ -379,9 +381,9 @@ as_activate(void)
 	/* Disable interrupts on this CPU while frobbing the TLB. */
 	spl = splhigh();
 
-	for (i=0; i<NUM_TLB; i++) {
+	/*for (i=0; i<NUM_TLB; i++) {
 		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
-	}
+	}*/
 
 	splx(spl);
 }

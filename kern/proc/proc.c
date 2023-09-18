@@ -48,11 +48,109 @@
 #include <current.h>
 #include <addrspace.h>
 #include <vnode.h>
+#include "opt-waitpid.h"
+
+#if OPT_WAITPID
+#include <synch.h>
+
+#define MAX_PROC 100
+static struct _processTable {
+  int active;           /* initial value 0 */
+  struct proc *proc[MAX_PROC+1]; /* [0] not used. pids are >= 1 */
+  int last_i;           /* index of last allocated pid */
+  struct spinlock lk;	/* Lock for this table */
+} processTable;
+
+
+#endif
+
 
 /*
  * The process for the kernel; this holds all the kernel-only threads.
  */
 struct proc *kproc;
+
+
+/*
+ * G.Cabodi - 2019
+ * Initialize support for pid/waitpid.
+ */
+struct proc *
+proc_search_pid(pid_t pid) {
+#if OPT_WAITPID
+  struct proc *p;
+  KASSERT(pid>=0&&pid<MAX_PROC);
+  p = processTable.proc[pid];
+  KASSERT(p->p_pid==pid);
+  return p;
+#else
+  (void)pid;
+  return NULL;
+#endif
+}
+
+/*
+ * G.Cabodi - 2019
+ * Initialize support for pid/waitpid.
+ */
+static void
+proc_init_waitpid(struct proc *proc, const char *name) {
+#if OPT_WAITPID
+  /* search a free index in table using a circular strategy */
+  int i;
+  spinlock_acquire(&processTable.lk);
+  i = processTable.last_i+1;
+  proc->p_pid = 0;
+  if (i>MAX_PROC) i=1;
+  while (i!=processTable.last_i) {
+    if (processTable.proc[i] == NULL) {
+      processTable.proc[i] = proc;
+      processTable.last_i = i;
+      proc->p_pid = i;
+      break;
+    }
+    i++;
+    if (i>MAX_PROC) i=1;
+  }
+  spinlock_release(&processTable.lk);
+  if (proc->p_pid==0) {
+    panic("too many processes. proc table is full\n");
+  }
+  proc->p_status = 0;
+#if USE_SEMAPHORE_FOR_WAITPID
+  proc->p_sem = sem_create(name, 0);
+
+#endif
+#else
+  (void)proc;
+  (void)name;
+#endif
+}
+
+/*
+ * G.Cabodi - 2019
+ * Terminate support for pid/waitpid.
+ */
+static void
+proc_end_waitpid(struct proc *proc) {
+#if OPT_WAITPID
+  /* remove the process from the table */
+  int i;
+  spinlock_acquire(&processTable.lk);
+  i = proc->p_pid;
+  KASSERT(i>0 && i<=MAX_PROC);
+  processTable.proc[i] = NULL;
+  spinlock_release(&processTable.lk);
+
+#if USE_SEMAPHORE_FOR_WAITPID
+  sem_destroy(proc->p_sem);
+
+#endif
+#else
+  (void)proc;
+#endif
+}
+
 
 /*
  * Create a proc structure.
@@ -75,12 +173,17 @@ proc_create(const char *name)
 
 	proc->p_numthreads = 0;
 	spinlock_init(&proc->p_lock);
-
+	#if OPT_WAITPID
+	proc_init_waitpid(proc, name);
+	#endif
 	/* VM fields */
 	proc->p_addrspace = NULL;
 
 	/* VFS fields */
 	proc->p_cwd = NULL;
+
+
+
 
 	return proc;
 }
@@ -155,6 +258,9 @@ proc_destroy(struct proc *proc)
 		struct addrspace *as;
 
 		if (proc == curproc) {
+			#if OPT_WAITPID
+			proc_end_waitpid(proc);
+			#endif
 			as = proc_setas(NULL);
 			as_deactivate();
 		}
@@ -167,7 +273,7 @@ proc_destroy(struct proc *proc)
 
 	KASSERT(proc->p_numthreads == 0);
 	spinlock_cleanup(&proc->p_lock);
-
+	
 	kfree(proc->p_name);
 	kfree(proc);
 }
@@ -182,6 +288,11 @@ proc_bootstrap(void)
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
 	}
+#if OPT_WAITPID
+spinlock_init(&processTable.lk);
+/* kernel process is not registered in the table */
+processTable.active = 1;
+#endif
 }
 
 /*
@@ -263,6 +374,7 @@ proc_remthread(struct thread *t)
 	struct proc *proc;
 	int spl;
 
+
 	proc = t->t_proc;
 	KASSERT(proc != NULL);
 
@@ -319,14 +431,27 @@ proc_setas(struct addrspace *newas)
 	return oldas;
 }
 
-struct proc* proc_search_pid(pid_t pid){
-	#if OPT_WAITPID
-	KASSERT(pid>=0 && pid <MAX_PROC);
-	struct proc *retvalue=processTable.proc[pid];
-	KASSERT(retvalue->p_pid==pid);
-	return retvalue;
-	#else
-	(void)pid;
-	return NULL;
-	#endif
+int 
+proc_wait(struct proc *proc)
+{
+#if OPT_WAITPID
+        int return_status;
+        /* NULL and kernel proc forbidden */
+	KASSERT(proc != NULL);
+	KASSERT(proc != kproc);
+
+        /* wait on semaphore or condition variable */ 
+#if USE_SEMAPHORE_FOR_WAITPID
+        P(proc->p_sem);
+#endif
+        return_status = proc->p_status;
+        proc_destroy(proc);
+        return return_status;
+#else
+        /* this doesn't synchronize */ 
+        (void)proc;
+        return 0;
+#endif
 }
+
+
