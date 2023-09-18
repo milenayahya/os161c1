@@ -42,7 +42,8 @@
 
 struct vnode;
 
-
+#define OPT_PAGING 1
+#define OPT_ON_DEMAND 1
 /*
  * Address space - data structure associated with the virtual memory
  * space of a process.
@@ -50,6 +51,14 @@ struct vnode;
  * Virtual address space is contigous and is used to retrieve the index of the page table through:
  * (virtual address - vbase)/PAGE_SIZE, if the address at ptable[i] is 0 it means that the page is not in memory
  */
+struct segment{
+        vaddr_t vbaseaddr;
+        off_t offset;
+        size_t memsize;
+        size_t filesize;
+        struct vnode *elf_node;
+        uint32_t flags;
+};
 
 struct addrspace {
 #if OPT_PAGING
@@ -61,8 +70,11 @@ struct addrspace {
         size_t as_npages2;
         paddr_t *as_stackpbase; //no need o
         #if OPT_ON_DEMAND
-        Elf32_Phdr seg_header1;
-        Elf32_Phdr seg_header2;
+        int initialized;
+        struct segment seg1;
+        struct segment seg2;
+        //Elf32_Phdr seg_header1;
+        //Elf32_Phdr seg_header2;
         #endif
 #else
         vaddr_t as_vbase1;  //base of code segment
@@ -75,6 +87,8 @@ struct addrspace {
         /* Put stuff here for your VM system */
 #endif
 };
+
+
 
 
 struct spinlock stealmem_lock;
@@ -142,7 +156,7 @@ int               as_define_region(struct addrspace *as,
 int               as_prepare_load(struct addrspace *as);
 int               as_complete_load(struct addrspace *as);
 int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
-
+int               as_define_segment(struct addrspace *as, vaddr_t vbase, off_t offset, size_t memsize , size_t filesize, struct vnode*elf_node, uint32_t flags);
 int               isTableActive (void);
 
 /*

@@ -72,6 +72,9 @@
  */
 #define DUMBVM_WITH_FREE 1
 
+#define OPT_PAGING 1 //TO REMOVE
+#define OPT_ON_DEMAND 1
+
 /*
  * Wrap ram_stealmem in a spinlock.
  */
@@ -314,7 +317,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable1[frame]=paddr;
-			load_page(as, curproc->p_cwd,as->seg_header1.p_offset,faultaddress,  as->as_vbase1, as->seg_header1.p_flags & PF_X );
+			load_page(as, as->seg1.elf_node,as->seg1.offset,faultaddress,  as->as_vbase1, as->seg1.flags & PF_X );
 		
 		}
 		#endif
@@ -326,7 +329,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable2[frame]=paddr;
-			load_page(as, curproc->p_cwd,as->seg_header2.p_offset,faultaddress, as->as_vbase2, as->seg_header2.p_flags & PF_X);
+			load_page(as, as->seg2.elf_node,as->seg2.offset,faultaddress, as->as_vbase2, as->seg2.flags & PF_X);
 		}
 		#endif
 	
@@ -338,6 +341,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if(paddr==0){
 			paddr=getuserppage();
 			as->as_stackpbase[frame]=paddr;
+			bzero((void *)PADDR_TO_KVADDR(paddr), PAGE_SIZE);
+			//One possible problem
 		}
 			
 		#endif
@@ -538,11 +543,36 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 		return 0;
 	}
 
+
 	/*
 	 * Support for more than two regions is not available.
 	 */
 	kprintf("dumbvm: Warning: too many regions\n");
 	return ENOSYS;
+}
+
+int as_define_segment(struct addrspace *as, vaddr_t vbase, off_t offset, size_t memsize, size_t filesize, struct vnode* elf_node, uint32_t flags){
+	if(as->initialized==0){
+		as->seg1.vbaseaddr=vbase;
+		as->seg1.offset=offset;
+		as->seg1.memsize=memsize;
+		as->seg1.filesize=filesize;
+		as->seg1.elf_node=elf_node;
+		as->seg1.flags=flags;
+		as->initialized++;
+		return 0;
+	}else if(as->initialized==1){
+		as->seg2.vbaseaddr=vbase;
+		as->seg2.offset=offset;
+		as->seg2.memsize=memsize;
+		as->seg2.filesize=filesize;
+		as->seg2.elf_node=elf_node;
+		as->seg2.flags=flags;
+		as->initialized++;
+		return 0;
+	}
+	else
+		return 1;
 }
 
 #if OPT_ON_DEMAND
