@@ -3,13 +3,13 @@
 
 int
 load_page(struct segment *seg,
-	     vaddr_t vaddr, paddr_t paddr
+	     vaddr_t vaddr, paddr_t paddr,
 	     int is_executable)
 {
 	struct iovec iov;
 	struct uio u;
 	int result;
-	off_t file_offset;
+	(void)is_executable;
 
 	// if (filesize > memsize) {
 	// 	kprintf("ELF: warning: segment filesize > segment memsize\n");
@@ -28,7 +28,7 @@ load_page(struct segment *seg,
 	if(page_index==0)  //first page
 	{
 		dest_addr=paddr+vbaseoffset;
-		resid=(PAGE_SIZE-(vbaseoffset) > seg->filesize) ? ps->filesize : PAGE_SIZE-vbaseoffset; //how much to read from page		
+		resid=(PAGE_SIZE-(vbaseoffset) > seg->filesize) ? seg->filesize : PAGE_SIZE-vbaseoffset; //how much to read from page		
 		file_offset = seg->offset;
 
 	}
@@ -49,15 +49,19 @@ load_page(struct segment *seg,
 
 	}else{  //middle page
 		file_offset= seg->offset + (page_index*PAGE_SIZE) - vbaseoffset;
-		resid=seg->filesize-(page_index*PAGE_SIZE) -vbaseoffset;
-		if(resid>PAGE_SIZE)
-			resid=PAGE_SIZE;
-		else if(resid<0){
+		if(seg->filesize<(page_index*PAGE_SIZE) -vbaseoffset){
 			resid=0;
 			file_offset=seg->filesize;
-		}
-			
+		}else{
+			resid=seg->filesize-(page_index*PAGE_SIZE) -vbaseoffset;
+			if(resid>PAGE_SIZE)
+				resid=PAGE_SIZE;
+		}	
 	}
+
+	KASSERT(dest_addr-paddr<PAGE_SIZE);
+	KASSERT(resid<PAGE_SIZE);
+	KASSERT(file_offset - seg->offset<=seg->filesize);
 	//How much we have to read in the first page
 	
 	/*iov.iov_ubase = (userptr_t)vaddr;           //Destination
@@ -73,10 +77,8 @@ load_page(struct segment *seg,
 */
 
 	uio_kinit(&iov,&u,(void *)PADDR_TO_KVADDR(dest_addr),resid,file_offset, UIO_READ);
-	//PAGE_SIZE needs to be replaced by a calculated variable once we distinguish
-	//between first/middle/last page.
 	
-	result = VOP_READ(v, &u);
+	result = VOP_READ(seg->elf_node, &u);
 	if (result) {
 		return result;
 	}

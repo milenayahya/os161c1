@@ -11,5 +11,5 @@
 
 int
 load_page(struct segment *seg,
-	     vaddr_t vaddr, paddr_t paddr
+	     vaddr_t vaddr, paddr_t paddr,
 	     int is_executable);

@@ -317,7 +317,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable1[frame]=paddr;
-			load_page(as->seg1,faultaddress, paddr);
+			load_page(&(as->seg1),faultaddress, paddr,1);
 		
 		}
 		#endif
@@ -329,7 +329,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable2[frame]=paddr;
-			load_page(as->seg2,faultaddress, paddr);
+			load_page(&(as->seg2),faultaddress, paddr,0);
 		}
 		#endif
 	
@@ -433,6 +433,8 @@ struct addrspace *
 as_create(void)
 {
 	struct addrspace *as = kmalloc(sizeof(struct addrspace));
+	bzero(as,sizeof(struct addrspace));
+
 	if (as==NULL) {
 		return NULL;
 	}
@@ -445,8 +447,26 @@ as_create(void)
 	as->as_ptable2 = 0;
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
+	as->initialized=0;
 	#if OPT_ON_DEMAND
 	// as->seg_header1=NULL;
+	as->seg1.vbaseaddr=0;
+	as->seg1.npages=0;
+	as->seg1.ptable=0;
+	as->seg1.filesize=0;
+	as->seg1.memsize=0;
+	as->seg1.offset=0;
+	as->seg1.elf_node=0;
+	as->seg1.flags=0;
+
+	as->seg2.vbaseaddr=0;
+	as->seg2.npages=0;
+	as->seg2.ptable=0;
+	as->seg2.filesize=0;
+	as->seg2.memsize=0;
+	as->seg2.offset=0;
+	as->seg2.elf_node=0;
+	as->seg2.flags=0;
 	// as->seg_header2=NULL;
 	#endif
 	#else
