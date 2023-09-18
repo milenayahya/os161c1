@@ -317,7 +317,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable1[frame]=paddr;
-			load_page(as, as->seg1.elf_node,as->seg1.offset,faultaddress,  as->as_vbase1, as->seg1.flags & PF_X );
+			load_page(as->seg1,faultaddress, paddr);
 		
 		}
 		#endif
@@ -329,7 +329,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable2[frame]=paddr;
-			load_page(as, as->seg2.elf_node,as->seg2.offset,faultaddress, as->as_vbase2, as->seg2.flags & PF_X);
+			load_page(as->seg2,faultaddress, paddr);
 		}
 		#endif
 	
@@ -534,12 +534,17 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 	if (as->as_vbase1 == 0) {
 		as->as_vbase1 = vaddr;
 		as->as_npages1 = npages;
+		as->seg1.vbaseaddr=vaddr;
+		as->seg1.npages=npages;
+
 		return 0;
 	}
 
 	if (as->as_vbase2 == 0) {
 		as->as_vbase2 = vaddr;
 		as->as_npages2 = npages;
+		as->seg2.vbaseaddr=vaddr;
+		as->seg2.npages=npages;
 		return 0;
 	}
 

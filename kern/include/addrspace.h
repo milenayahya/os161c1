@@ -52,11 +52,15 @@ struct vnode;
  * (virtual address - vbase)/PAGE_SIZE, if the address at ptable[i] is 0 it means that the page is not in memory
  */
 struct segment{
-        vaddr_t vbaseaddr;
-        off_t offset;
+        vaddr_t vbaseaddr;      //Page-Table infos
+        size_t npages;
+        paddr_t *ptable;
+
+        off_t offset;           //File-content infos
         size_t memsize;
         size_t filesize;
         struct vnode *elf_node;
+        
         uint32_t flags;
 };
 

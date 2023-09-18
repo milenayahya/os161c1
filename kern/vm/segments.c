@@ -9,6 +9,7 @@ load_page(struct segment *seg,
 	struct iovec iov;
 	struct uio u;
 	int result;
+	off_t file_offset;
 
 	// if (filesize > memsize) {
 	// 	kprintf("ELF: warning: segment filesize > segment memsize\n");
@@ -19,9 +20,46 @@ load_page(struct segment *seg,
 	//       (unsigned long) filesize, (unsigned long) vaddr);
 	unsigned long page_index=(vaddr-(seg->vbaseaddr &PAGE_FRAME))/PAGE_SIZE;
 	vaddr_t vbaseoffset=(page_index==0)?seg->vbaseaddr &(~PAGE_FRAME) : 0; 									//How much to read in the last page from page start or where to start reading in the first page;
+	vaddr_t dest_addr=paddr;
+	size_t resid=PAGE_SIZE;
+	off_t file_offset;
+	vaddr_t voffset;
 	
-	size_t resid=PAGE_SIZE-(vbaseoffset); //how much to read from page								//How much we have to read in the first page
-	paddr_t dest_addr=paddr+vbaseoffset;
+	if(page_index==0)  //first page
+	{
+		dest_addr=paddr+vbaseoffset;
+		resid=(PAGE_SIZE-(vbaseoffset) > seg->filesize) ? ps->filesize : PAGE_SIZE-vbaseoffset; //how much to read from page		
+		file_offset = seg->offset;
+
+	}
+
+	else if(page_index== (seg->npages)-1){  //last page
+		voffset = (seg->npages-1)*PAGE_SIZE -vbaseoffset;
+		dest_addr = paddr;
+		file_offset= seg->offset + voffset;
+		
+		if(seg->filesize > voffset)
+			resid = seg->filesize - voffset;
+		else
+		{
+			resid = 0;
+			file_offset= seg->filesize;
+		}
+
+
+	}else{  //middle page
+		file_offset= seg->offset + (page_index*PAGE_SIZE) - vbaseoffset;
+		resid=seg->filesize-(page_index*PAGE_SIZE) -vbaseoffset;
+		if(resid>PAGE_SIZE)
+			resid=PAGE_SIZE;
+		else if(resid<0){
+			resid=0;
+			file_offset=seg->filesize;
+		}
+			
+	}
+	//How much we have to read in the first page
+	
 	/*iov.iov_ubase = (userptr_t)vaddr;           //Destination
 	iov.iov_len = PAGE_SIZE;		 			// length of the memory space
 	u.uio_iov = &iov;
@@ -34,7 +72,7 @@ load_page(struct segment *seg,
 	u.uio_space = as;
 */
 
-	uio_kinit(&iov,&u,(void *)PADDR_TO_KVADDR(paddr+),PAGE_SIZE,offset);
+	uio_kinit(&iov,&u,(void *)PADDR_TO_KVADDR(dest_addr),resid,file_offset, UIO_READ);
 	//PAGE_SIZE needs to be replaced by a calculated variable once we distinguish
 	//between first/middle/last page.
 	
