@@ -303,10 +303,10 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 		//from now on we can mess with the code
 		#if OPT_ON_DEMAND
 		//Load First Page
-		if(as->as_ptable1[0]==0)
-			as->as_ptable1[0]= getuserppage();
-		if(as->as_ptable2[0]==0)
-			as->as_ptable2[0]=getuserppage();
+		//if(as->as_ptable1[0]==0)
+		//	as->as_ptable1[0]= getuserppage();
+		//if(as->as_ptable2[0]==0)
+		//	as->as_ptable2[0]=getuserppage();
 
 		// if(i==0)
 		// 	result = load_page(as, v,as->seg1.offset, as->seg1.offset, as->seg1.vbaseaddr, as->seg1.flags & PF_X);

@@ -60,7 +60,7 @@ load_page(struct segment *seg,
 	}
 
 	KASSERT(dest_addr-paddr<PAGE_SIZE);
-	KASSERT(resid<PAGE_SIZE);
+	KASSERT(resid<=PAGE_SIZE);
 	KASSERT(file_offset - seg->offset<=seg->filesize);
 	//How much we have to read in the first page
 	

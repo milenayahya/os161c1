@@ -251,16 +251,16 @@ vm_tlbshootdown(const struct tlbshootdown *ts)
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
  {
-	vaddr_t vbase1, vtop1, vbase2, vtop2, stackbase, stacktop;
+	vaddr_t vbase1, vtop1, vbase2, vtop2, stackbase, stacktop, fault_aligned;
 	paddr_t paddr;
 	int i;
 	uint32_t ehi, elo;
 	struct addrspace *as;
 	int spl;
 
-	faultaddress &= PAGE_FRAME;
+	fault_aligned=faultaddress&PAGE_FRAME;
 
-	DEBUG(DB_VM, "dumbvm: fault: 0x%x\n", faultaddress);
+	DEBUG(DB_VM, "dumbvm: fault: 0x%x\n", fault_aligned);
 
 	switch (faulttype) {
 	    case VM_FAULT_READONLY:
@@ -310,8 +310,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	stackbase = USERSTACK - DUMBVM_STACKPAGES * PAGE_SIZE;
 	stacktop = USERSTACK;
 
-	if (faultaddress >= vbase1 && faultaddress < vtop1) {
-		long frame=(long) ((faultaddress - vbase1)/PAGE_SIZE);
+	if (fault_aligned >= vbase1 && fault_aligned < vtop1) {
+		long frame=(long) ((fault_aligned - vbase1)/PAGE_SIZE);
 		paddr = as->as_ptable1[frame];
 		#if OPT_ON_DEMAND
 		if (paddr == 0){ //the page is not already loaded in memory
@@ -322,8 +322,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		}
 		#endif
 	}
-	else if (faultaddress >= vbase2 && faultaddress < vtop2) {
-		long frame=(long) ((faultaddress - vbase2)/PAGE_SIZE);
+	else if (fault_aligned >= vbase2 && fault_aligned < vtop2) {
+		long frame=(long) ((fault_aligned - vbase2)/PAGE_SIZE);
 		paddr = as->as_ptable2[frame];
 		#if OPT_ON_DEMAND
 		if (paddr == 0){ //the page is not already loaded in memory
@@ -334,8 +334,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		#endif
 	
 	}
-	else if (faultaddress >= stackbase && faultaddress < stacktop) {
-		long frame=(long) ((faultaddress - stackbase)/PAGE_SIZE);
+	else if (fault_aligned >= stackbase && fault_aligned < stacktop) {
+		long frame=(long) ((fault_aligned - stackbase)/PAGE_SIZE);
 		paddr = as->as_stackpbase[frame];
 		#if OPT_ON_DEMAND
 		if(paddr==0){
@@ -402,9 +402,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (elo & TLBLO_VALID) {
 			continue;
 		}
-		ehi = faultaddress;
+		ehi = fault_aligned;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
-		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
+		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", fault_aligned, paddr);
 		tlb_write(ehi, elo, i);
 		tlb_faults_with_free++;
 		splx(spl);
@@ -413,7 +413,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	//we have reached the end of the TLB and it is full, need a victim
 	#if OPT_TLB_MANAGEMENT
-	ehi = faultaddress;
+	ehi = fault_aligned;
 	elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 	int victim = tlb_get_victim();
 	tlb_write(ehi, elo, victim);
