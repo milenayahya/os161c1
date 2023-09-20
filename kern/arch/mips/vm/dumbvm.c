@@ -72,6 +72,9 @@
  */
 #define DUMBVM_WITH_FREE 1
 
+#define OPT_PAGING 1 //TO REMOVE
+#define OPT_ON_DEMAND 1
+
 /*
  * Wrap ram_stealmem in a spinlock.
  */
@@ -248,16 +251,16 @@ vm_tlbshootdown(const struct tlbshootdown *ts)
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
  {
-	vaddr_t vbase1, vtop1, vbase2, vtop2, stackbase, stacktop;
+	vaddr_t vbase1, vtop1, vbase2, vtop2, stackbase, stacktop, fault_aligned;
 	paddr_t paddr;
 	int i;
 	uint32_t ehi, elo;
 	struct addrspace *as;
 	int spl;
 
-	faultaddress &= PAGE_FRAME;
+	fault_aligned=faultaddress&PAGE_FRAME;
 
-	DEBUG(DB_VM, "dumbvm: fault: 0x%x\n", faultaddress);
+	DEBUG(DB_VM, "dumbvm: fault: 0x%x\n", fault_aligned);
 
 	switch (faulttype) {
 	    case VM_FAULT_READONLY:
@@ -307,37 +310,39 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	stackbase = USERSTACK - DUMBVM_STACKPAGES * PAGE_SIZE;
 	stacktop = USERSTACK;
 
-	if (faultaddress >= vbase1 && faultaddress < vtop1) {
-		long frame=(long) ((faultaddress - vbase1)/PAGE_SIZE);
+	if (fault_aligned >= vbase1 && fault_aligned < vtop1) {
+		long frame=(long) ((fault_aligned - vbase1)/PAGE_SIZE);
 		paddr = as->as_ptable1[frame];
 		#if OPT_ON_DEMAND
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable1[frame]=paddr;
-			load_page(as, curproc->p_cwd,as->seg_header1.p_offset,faultaddress,  as->as_vbase1, as->seg_header1.p_flags & PF_X );
+			load_page(&(as->seg1),faultaddress, paddr,1);
 		
 		}
 		#endif
 	}
-	else if (faultaddress >= vbase2 && faultaddress < vtop2) {
-		long frame=(long) ((faultaddress - vbase2)/PAGE_SIZE);
+	else if (fault_aligned >= vbase2 && fault_aligned < vtop2) {
+		long frame=(long) ((fault_aligned - vbase2)/PAGE_SIZE);
 		paddr = as->as_ptable2[frame];
 		#if OPT_ON_DEMAND
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
 			as->as_ptable2[frame]=paddr;
-			load_page(as, curproc->p_cwd,as->seg_header2.p_offset,faultaddress, as->as_vbase2, as->seg_header2.p_flags & PF_X);
+			load_page(&(as->seg2),faultaddress, paddr,0);
 		}
 		#endif
 	
 	}
-	else if (faultaddress >= stackbase && faultaddress < stacktop) {
-		long frame=(long) ((faultaddress - stackbase)/PAGE_SIZE);
+	else if (fault_aligned >= stackbase && fault_aligned < stacktop) {
+		long frame=(long) ((fault_aligned - stackbase)/PAGE_SIZE);
 		paddr = as->as_stackpbase[frame];
 		#if OPT_ON_DEMAND
 		if(paddr==0){
 			paddr=getuserppage();
 			as->as_stackpbase[frame]=paddr;
+			bzero((void *)PADDR_TO_KVADDR(paddr), PAGE_SIZE);
+			//One possible problem
 		}
 			
 		#endif
@@ -397,9 +402,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		if (elo & TLBLO_VALID) {
 			continue;
 		}
-		ehi = faultaddress;
+		ehi = fault_aligned;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
-		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
+		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", fault_aligned, paddr);
 		tlb_write(ehi, elo, i);
 		tlb_faults_with_free++;
 		splx(spl);
@@ -408,7 +413,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	//we have reached the end of the TLB and it is full, need a victim
 	#if OPT_TLB_MANAGEMENT
-	ehi = faultaddress;
+	ehi = fault_aligned;
 	elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 	int victim = tlb_get_victim();
 	tlb_write(ehi, elo, victim);
@@ -428,6 +433,8 @@ struct addrspace *
 as_create(void)
 {
 	struct addrspace *as = kmalloc(sizeof(struct addrspace));
+	bzero(as,sizeof(struct addrspace));
+
 	if (as==NULL) {
 		return NULL;
 	}
@@ -440,8 +447,26 @@ as_create(void)
 	as->as_ptable2 = 0;
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
+	as->initialized=0;
 	#if OPT_ON_DEMAND
 	// as->seg_header1=NULL;
+	as->seg1.vbaseaddr=0;
+	as->seg1.npages=0;
+	as->seg1.ptable=0;
+	as->seg1.filesize=0;
+	as->seg1.memsize=0;
+	as->seg1.offset=0;
+	as->seg1.elf_node=0;
+	as->seg1.flags=0;
+
+	as->seg2.vbaseaddr=0;
+	as->seg2.npages=0;
+	as->seg2.ptable=0;
+	as->seg2.filesize=0;
+	as->seg2.memsize=0;
+	as->seg2.offset=0;
+	as->seg2.elf_node=0;
+	as->seg2.flags=0;
 	// as->seg_header2=NULL;
 	#endif
 	#else
@@ -529,20 +554,50 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 	if (as->as_vbase1 == 0) {
 		as->as_vbase1 = vaddr;
 		as->as_npages1 = npages;
+		as->seg1.vbaseaddr=vaddr;
+		as->seg1.npages=npages;
+
 		return 0;
 	}
 
 	if (as->as_vbase2 == 0) {
 		as->as_vbase2 = vaddr;
 		as->as_npages2 = npages;
+		as->seg2.vbaseaddr=vaddr;
+		as->seg2.npages=npages;
 		return 0;
 	}
+
 
 	/*
 	 * Support for more than two regions is not available.
 	 */
 	kprintf("dumbvm: Warning: too many regions\n");
 	return ENOSYS;
+}
+
+int as_define_segment(struct addrspace *as, vaddr_t vbase, off_t offset, size_t memsize, size_t filesize, struct vnode* elf_node, uint32_t flags){
+	if(as->initialized==0){
+		as->seg1.vbaseaddr=vbase;
+		as->seg1.offset=offset;
+		as->seg1.memsize=memsize;
+		as->seg1.filesize=filesize;
+		as->seg1.elf_node=elf_node;
+		as->seg1.flags=flags;
+		as->initialized++;
+		return 0;
+	}else if(as->initialized==1){
+		as->seg2.vbaseaddr=vbase;
+		as->seg2.offset=offset;
+		as->seg2.memsize=memsize;
+		as->seg2.filesize=filesize;
+		as->seg2.elf_node=elf_node;
+		as->seg2.flags=flags;
+		as->initialized++;
+		return 0;
+	}
+	else
+		return 1;
 }
 
 #if OPT_ON_DEMAND
