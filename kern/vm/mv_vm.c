@@ -79,6 +79,9 @@
 #define OPT_PAGING 1 //TO REMOVE
 #define OPT_ON_DEMAND 1
 
+
+#define LOAD_PAGE 1
+#define SWAP_IN_PAGE 2
 /*
  * Wrap ram_stealmem in a spinlock.
  */
@@ -125,32 +128,18 @@ vm_bootstrap(void)
   spinlock_release(&freemem_lock);
 }
 
-static paddr_t replace_page(struct segment seg){
+static paddr_t replace_page(paddr_t *ptable){
     paddr_t paddr;
-    long frame_out;
-    frame_out= dequeue_page();
-    //Check that the page has been allocated and has not been swapped out
-    KASSERT(seg->ptable[frame_out]!=0);
-    KASSERT(seg->ptable[frame_out]&PAGE_FRAME==seg->ptable[frame_out]);
-    off_t ret_offset;
-    result = swap_out(seg->ptable[frame_out],ret_offset);
-    if(result){
-        return 0;
-    }
-    ret_offset|=PAGE_SWAPPED;
-    
-    //update TLB
-    invalidate_entry(frame_out*PAGE_SIZE, seg->ptable[frame_out]);
-
-    //update PT
-    paddr=seg->ptable[frame_out];
-    seg->ptable[frame_out]= ret_offset;
+	(void) ptable;
+	paddr=dequeue_page();
     
     return paddr;
 }
 
-int page_fault(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, struct segment seg){
+int page_fault(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, struct segment *seg , paddr_t *dest_paddr){
     paddr_t paddr;
+
+	(void)vtop;
     //you are in the right segment, find the paddr in page table
     long frame=(long) ((fault_aligned - vbase)/PAGE_SIZE);
     paddr = seg->ptable[frame];
@@ -164,33 +153,38 @@ int page_fault(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, struct segmen
         //could not load page in memory as memory is full, need to swap
         if(paddr == 0)
         {
-            paddr=replace_page(seg);
+            paddr=replace_page(seg->ptable);
             if(paddr==0){
                 panic("Problem with swap out");
             }
             
         }
         #endif
-        KASSERT(paddr&PAGE_FRAME == paddr);
+        KASSERT((paddr&PAGE_FRAME )== paddr);
         seg->ptable[frame]=paddr;
-        load_page(&(seg),faultaddress, paddr,1);
-        queue_page(frame);
+        queue_page(fault_aligned,seg);
+		*dest_paddr=paddr;
+		return LOAD_PAGE;
         
-    }else if(paddr&PAGE_SWAPPED!=0){ //the page is swapped out and we need to swap it in
+    }else if((paddr&PAGE_SWAPPED)!=0){ //the page is swapped out and we need to swap it in
         //In case we want to delete read_only pages, we must look for a free page before
         paddr_t new_paddr;
         new_paddr=getuserppage();
         if(new_paddr==0)
-            new_paddr=replace_page(seg);
+            new_paddr=replace_page(seg->ptable);
         
         swap_in(new_paddr, (off_t) paddr& (~PAGE_SWAPPED));
         seg->ptable[frame]=new_paddr;
-        queue_page(frame);
+		*dest_paddr=new_paddr;
+        queue_page(fault_aligned,seg);
+		return SWAP_IN_PAGE;
     }
+	#endif
+	*dest_paddr=paddr;
     return 0;
 }
 
-int page_fault_stack(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, paddr_t* stacktable){
+/*int page_fault_stack(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, paddr_t* stacktable){
     paddr_t paddr;
     //you are in the right segment, find the paddr in page table
     long frame=(long) ((fault_aligned - vbase)/PAGE_SIZE);
@@ -228,8 +222,11 @@ int page_fault_stack(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, paddr_t
         stacktable[frame]=new_paddr;
         queue_page(frame);
     }
+	#endif
     return 0;
-}
+}*/
+
+
 /*
  * Check if we're in a context that can sleep. While most of the
  * operations in dumbvm don't in fact sleep, in a real VM system many
@@ -421,14 +418,21 @@ vm_fault(int faulttype, vaddr_t faultaddress)
    
 
 	if (fault_aligned >= vbase1 && fault_aligned < vtop1) {
-         page_fault(fault_aligned, vbase1, vtop1, as->seg1,0);
+        int result=page_fault(fault_aligned, vbase1, vtop1,&(as->seg1),&paddr);
+		if(result==LOAD_PAGE)
+			load_page(&(as->seg1),faultaddress, paddr,1);
 	}
 	else if (fault_aligned >= vbase2 && fault_aligned < vtop2) {
-        page_fault(fault_aligned, vbase2, vtop2, as->seg2,0);
+        int result=page_fault(fault_aligned, vbase2, vtop2, &(as->seg2), &paddr);
+		if(result==LOAD_PAGE)
+			load_page(&(as->seg2),faultaddress, paddr,1);
 	
 	}
 	else if (fault_aligned >= stackbase && fault_aligned < stacktop) {
-		page_fault_stack(fault_aligned, stackbase);
+		int result=page_fault(fault_aligned, stackbase, stacktop, &(as->stackseg),&paddr);
+		if(result==LOAD_PAGE){
+			bzero((void *)PADDR_TO_KVADDR(paddr), PAGE_SIZE);
+		}
 	}
 	else {
 		return EFAULT;
@@ -526,9 +530,11 @@ as_create(void)
 	as->as_vbase1 = 0;
 	as->as_ptable1 = 0;
 	as->as_npages1 = 0;
+
 	as->as_vbase2 = 0;
 	as->as_ptable2 = 0;
 	as->as_npages2 = 0;
+
 	as->as_stackpbase = 0;
 	as->initialized=0;
 	#if OPT_ON_DEMAND
@@ -580,7 +586,7 @@ void as_destroy(struct addrspace *as){
   freeppages(as->as_pbase2, as->as_npages2);
   freeppages(as->as_stackpbase, DUMBVM_STACKPAGES);
   #endif
-  
+  clear_queue(as);
   
   kfree(as);
 }
@@ -637,6 +643,7 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 	if (as->as_vbase1 == 0) {
 		as->as_vbase1 = vaddr;
 		as->as_npages1 = npages;
+
 		as->seg1.vbaseaddr=vaddr;
 		as->seg1.npages=npages;
 
@@ -646,6 +653,7 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 	if (as->as_vbase2 == 0) {
 		as->as_vbase2 = vaddr;
 		as->as_npages2 = npages;
+
 		as->seg2.vbaseaddr=vaddr;
 		as->seg2.npages=npages;
 		return 0;
@@ -713,21 +721,21 @@ as_prepare_load(struct addrspace *as)
 	#if OPT_ON_DEMAND
 		as->as_ptable1 = (paddr_t *)kmalloc(sizeof(paddr_t)*as->as_npages1);
 		bzero((void *)PADDR_TO_KVADDR(as->as_ptable1), sizeof(paddr_t)*as->as_npages1);
-		
+		as->seg1.ptable=as->as_ptable1;
 		if (as->as_ptable1 == 0) {
 			return ENOMEM;
 		}
 
 		as->as_ptable2 =(paddr_t *)kmalloc(sizeof(paddr_t)*as->as_npages2);
 		bzero((void *)PADDR_TO_KVADDR(as->as_ptable2), sizeof(paddr_t)*as->as_npages2 );
-
+		as->seg2.ptable=as->as_ptable2;
 		if (as->as_ptable2 == 0) {
 			return ENOMEM;
 		}
 
 		as->as_stackpbase = (paddr_t *)kmalloc(sizeof(paddr_t)*DUMBVM_STACKPAGES);
 		bzero((void *)PADDR_TO_KVADDR(as->as_stackpbase), sizeof(paddr_t)*DUMBVM_STACKPAGES);
-
+		as->stackseg.ptable= as->as_stackpbase;
 		if (as->as_stackpbase == 0) {
 			return ENOMEM;
 		}
@@ -799,6 +807,7 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
 	KASSERT(as->as_stackpbase != 0);
 
+	as->stackseg.vbaseaddr=USERSTACK-DUMBVM_STACKPAGES*PAGE_SIZE;
 	*stackptr = USERSTACK;
 	return 0;
 }
@@ -818,8 +827,10 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 #if OPT_PAGING
 	new->as_vbase1 = old->as_vbase1;
 	new->as_npages1 = old->as_npages1;
+	new->seg1=old->seg1;
 	new->as_vbase2 = old->as_vbase2;
 	new->as_npages2 = old->as_npages2;
+	new->seg2=old->seg2;
 
 	if (as_prepare_load(new)) {
 		as_destroy(new);

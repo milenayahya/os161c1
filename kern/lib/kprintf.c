@@ -134,7 +134,6 @@ void
 panic(const char *fmt, ...)
 {
 	va_list ap;
-
 	/*
 	 * When we reach panic, the system is usually fairly screwed up.
 	 * It's not entirely uncommon for anything else we try to do

@@ -31,14 +31,13 @@ options semfs			# Semaphores for userland
 options sfs			# Always use the file system
 #options netfs			# You might write this as a project.
 
+options mv_vm
 options syscalls
 
 options synch           #Not related to C1 project
 options waitpid
-
 options tlb_management
-
 options paging
 options on_demand
 options swapping
-options mv_vm
+

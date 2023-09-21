@@ -347,6 +347,7 @@ file      vm/kmalloc.c
 
 optofffile dumbvm   vm/addrspace.c
 
+
 #
 # Network
 # (nothing here yet)
@@ -402,14 +403,16 @@ file      main/menu.c
 
 optfile     hello           main/hello.c
 optfile     mv_vm           vm/mv_vm.c
+
 optfile     syscalls        syscall/file_syscalls.c 
 optfile     syscalls        syscall/proc_syscalls.c
 optfile     tlb_management  vm/vm_tlb.c
 optfile     paging          vm/coremap.c
 optfile     paging          vm/segments.c
 optfile     on_demand       vm/pt.c
-optfile     swapping        vm/swapfile.C
-optfile     swapping        vm/swapfile.h
+optfile     swapping        vm/swapfile.c
+
+optofffile  mv_vm           vm/addrspace.c
 
 ########################################
 #                                      #

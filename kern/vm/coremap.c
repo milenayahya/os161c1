@@ -121,7 +121,7 @@ void destroy_ptable(paddr_t *ptable, long npages){
     KASSERT(ptable!=0);
     spinlock_acquire(&freemem_lock);
     for(i=0;i<npages;i++){
-        if(ptable[i]==0)
+        if(ptable[i]==0 || (ptable[i]&PAGE_SWAPPED)!=0)
           continue;
         index=(long)(ptable[i]/PAGE_SIZE);
         KASSERT(nRamFrames>index);

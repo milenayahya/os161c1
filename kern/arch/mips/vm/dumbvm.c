@@ -320,37 +320,13 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		#if OPT_ON_DEMAND
 		if (paddr == 0){ //the page is not already loaded in memory
 			paddr=getuserppage();
-			#if OPT_SWAPPING
-			if(paddr == 0)
-			{
-				long frame_out;
-				frame_out= dequeue_page();
-				//Check that the page has been allocated and has not been swapped out
-				KASSERT(as->as_ptable1[frame_out]!=0);
-				KASSERT(as->as_ptable1[frame_out]&PAGE_FRAME==as->as_ptable1[frame_out]);
-				off_t ret_offset;
-				result = swap_out(as->as_ptable1[frame_out],ret_offset);
-				ret_offset|=PAGE_SWAPPED;
-				
-				//update TLB
-				invalidate_entry(frame_out*PAGE_SIZE, as->as_ptable1[frame_out]);
-
-				//update PT
-				paddr=as->as_ptable1[frame_out];
-				as->as_ptable1[frame_out]= ret_offset;
-				
-			}
-			#endif
-			KASSERT(paddr&PAGE_FRAME == paddr);
+			
+			KASSERT((paddr&PAGE_FRAME) == paddr);
 			as->as_ptable1[frame]=paddr;
 			load_page(&(as->seg1),faultaddress, paddr,1);
 			queue_page(frame);
 		}
 		#if OPT_SWAPPING
-		else if(paddr&PAGE_SWAPPED!=0){
-
-
-		}
 		#endif 	//SWAPPING
 		#endif	//PAGING
 	}
@@ -662,21 +638,21 @@ as_prepare_load(struct addrspace *as)
 	#if OPT_ON_DEMAND
 		as->as_ptable1 = (paddr_t *)kmalloc(sizeof(paddr_t)*as->as_npages1);
 		bzero((void *)PADDR_TO_KVADDR(as->as_ptable1), sizeof(paddr_t)*as->as_npages1);
-		
+		as->seg1.ptable=as->as_ptable1;
 		if (as->as_ptable1 == 0) {
 			return ENOMEM;
 		}
 
 		as->as_ptable2 =(paddr_t *)kmalloc(sizeof(paddr_t)*as->as_npages2);
 		bzero((void *)PADDR_TO_KVADDR(as->as_ptable2), sizeof(paddr_t)*as->as_npages2 );
-
+		as->seg2.ptable=as->as_ptable2;
 		if (as->as_ptable2 == 0) {
 			return ENOMEM;
 		}
 
 		as->as_stackpbase = (paddr_t *)kmalloc(sizeof(paddr_t)*DUMBVM_STACKPAGES);
 		bzero((void *)PADDR_TO_KVADDR(as->as_stackpbase), sizeof(paddr_t)*DUMBVM_STACKPAGES);
-
+		
 		if (as->as_stackpbase == 0) {
 			return ENOMEM;
 		}

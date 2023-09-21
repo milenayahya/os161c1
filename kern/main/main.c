@@ -51,10 +51,10 @@
 #include <syscall.h>
 #include <test.h>
 #include <version.h>
+
+#include "swapfile.h"
 #include "opt-swapping.h"
-	#if OPT_SWAPPING 
-	#include <swapfile.h>
-	#endif
+
 #include "autoconf.h"  // for pseudoconfig
 #include "hello.h"
 #include "opt-hello.h"
@@ -138,8 +138,9 @@ boot(void)
 	vfs_setbootfs("emu0");
 
 	kheap_nextgeneration();
-	
+	#if OPT_SWAPPING
 	swap_init();
+	#endif 
 	/*
 	 * Make sure various things aren't screwed up.
 	 */
@@ -156,9 +157,9 @@ shutdown(void)
 {
 
 	kprintf("Shutting down.\n");
-
+	#if OPT_SWAPPING
 	swap_shutdown();
-
+	#endif
 	vfs_clearbootfs();
 	vfs_clearcurdir();
 	vfs_unmountall();

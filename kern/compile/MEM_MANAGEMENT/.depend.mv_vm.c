@@ -1,4 +1,4 @@
-dumbvm.o: ../../arch/mips/vm/dumbvm.c ../../include/types.h \
+mv_vm.o: ../../vm/mv_vm.c ../../include/types.h \
  ../../include/kern/types.h includelinks/kern/machine/types.h \
  includelinks/machine/types.h ../../include/kern/errno.h \
  ../../include/lib.h ../../include/cdefs.h opt-noasserts.h \
@@ -12,8 +12,8 @@ dumbvm.o: ../../arch/mips/vm/dumbvm.c ../../include/types.h \
  includelinks/mips/tlb.h opt-tlb_testing.h ../../include/coremap.h \
  ../../include/vm.h opt-tlb_management.h ../../include/addrspace.h \
  ../../include/elf.h includelinks/machine/elf.h opt-dumbvm.h \
- opt-on_demand.h ../../include/swapfile.h ../../include/vfs.h \
- ../../include/bitmap.h ../../include/uio.h ../../include/kern/iovec.h \
- ../../include/vnode.h includelinks/mips/vm.h ../../include/segments.h \
- ../../include/vm_tlb.h ../../include/pt.h opt-swapping.h \
- ../../include/vmstats.h
+ opt-on_demand.h ../../include/swapfile.h ../../include/kern/fcntl.h \
+ ../../include/vfs.h ../../include/bitmap.h ../../include/uio.h \
+ ../../include/kern/iovec.h ../../include/vnode.h includelinks/mips/vm.h \
+ ../../include/segments.h ../../include/vm_tlb.h ../../include/pt.h \
+ opt-swapping.h ../../include/vmstats.h

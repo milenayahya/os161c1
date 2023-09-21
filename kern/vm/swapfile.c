@@ -1,22 +1,26 @@
 #include <swapfile.h>
 
+
 int swap_init(void){
 
     int result;
+
+    char swapfile_name[32];
+    strcpy(swapfile_name, SWAP_PATH);
     // we open the swapfile and save it in a global handle vnode: swapfile
-    result = vfs_open(SWAP_PATH, O_RDWR, 0, &swapfile);
+    result = vfs_open(swapfile_name, O_RDWR, 0, &swapfile);
     if(result){
         panic("Couldn't open swapfile");
     }
     //create bitmap for swapfile
     swapmap = bitmap_create(SWAP_SIZE/PAGE_SIZE); 
     
-    kprintf("Swapping initialized");
+    kprintf("Swapping initialized\n");
     spinlock_init(&swapfile_lock);
-
+    return 0;
 }
 
-int swap_out(paddr_t page, off_t *ret_offset){
+unsigned long swap_out(paddr_t page, off_t *ret_offset){
     unsigned index=0;
     int result;
 
@@ -25,7 +29,7 @@ int swap_out(paddr_t page, off_t *ret_offset){
     KASSERT(spinlock_do_i_hold(&swapfile_lock));
     KASSERT(page != 0);
     page&=PAGE_FRAME;
-    KASSERT(page & PAGE_FRAME ==  page);
+    KASSERT((page & PAGE_FRAME) ==  page);
 
     result=bitmap_alloc(swapmap, &index);
     spinlock_release(&swapfile_lock);
@@ -37,9 +41,9 @@ int swap_out(paddr_t page, off_t *ret_offset){
     struct uio uio;
     struct iovec iov;
 
-    uio_kinit(&iov, &uio, (void *) PADDR_TO_KVADDR( paddr), PAGE_SIZE, index*PAGE_SIZE, UIO_WRITE);
+    uio_kinit(&iov, &uio, (void *) PADDR_TO_KVADDR( page), PAGE_SIZE, index*PAGE_SIZE, UIO_WRITE);
     
-    result=VOP_WRITE(swapfile, uio);
+    result=VOP_WRITE(swapfile, &uio);
     if(result){
         panic("Result not zero in VOP_WRITE");
         return result;
@@ -60,8 +64,8 @@ int swap_out(paddr_t page, off_t *ret_offset){
 int swap_in(paddr_t page, off_t offset_swapfile){
     
     KASSERT(page != 0);
-    KASSERT(page & PAGE_FRAME ==  page)
-    KASSERT(offset_swapfile & PAGE_FRAME == offset_swapfile);
+    KASSERT((page & PAGE_FRAME )==  page);
+    KASSERT((offset_swapfile & PAGE_FRAME )== offset_swapfile);
     KASSERT(offset_swapfile < SWAP_SIZE);
 
     unsigned int index = offset_swapfile/ PAGE_SIZE; //index in swapmap of the page to be swapped in, should be used to verify entry in bitmap exists
@@ -69,11 +73,15 @@ int swap_in(paddr_t page, off_t offset_swapfile){
     //in reality need to use spinlocks to read the bitmap
 
     spinlock_acquire(&swapfile_lock);
-    if(!bitmap_isset(swapmap, index)==1);
+    if(bitmap_isset(swapmap, index)==0)
     {
         panic("trying to access empty page in swapfile");
     }
     
+    //unmark the bitmap
+   
+    bitmap_unmark(swapmap,index);
+    spinlock_release(&swapfile_lock);
     
     struct uio uio;
     struct iovec iov;
@@ -84,23 +92,20 @@ int swap_in(paddr_t page, off_t offset_swapfile){
     if(uio.uio_resid!=0)
         panic("Couldn't read the whole page from swapfile");
 
-    //unmark the bitmap
-   
-    bitmap_unmark(swapmap,index);
-    spinlock_release(&swapfile_lock);
+    
 
     return 0;
 
 }
 
-int swap_clean(){  //resetting the entries of the bitmap and marking them all free
+int swap_clean(void){  //resetting the entries of the bitmap and marking them all free
     spinlock_acquire(&swapfile_lock);
-    bzero(PADDR_TO_KVADDR((void *)swapmap.v), sizeof(WORD_TYPE)*swapmap.nbits);
+    //bzero((void *)PADDR_TO_KVADDR(swapmap->v), sizeof(WORD_TYPE)* (swapmap->nbits));
     spinlock_release(&swapfile_lock);
     return 0;
 }
 
-int swap_clear(off_t swap_page){  //clear particular page
+void swap_clear(off_t swap_page){  //clear particular page
     spinlock_acquire(&swapfile_lock);
     swap_page&=PAGE_FRAME;
     int index=swap_page/PAGE_SIZE;
@@ -108,17 +113,17 @@ int swap_clear(off_t swap_page){  //clear particular page
     bitmap_unmark(swapmap, index);
 
     spinlock_release(&swapfile_lock);
-    return 0;
 }
 
-int swap_shutdown(){
+int swap_shutdown(void){
     spinlock_acquire(&swapfile_lock);
-    bitmap_destroy(&swapmap);
-    vfs_close(&swapfile);
+    bitmap_destroy(swapmap);
+    vfs_close(swapfile);
     
     spinlock_release(&swapfile_lock);
 
     spinlock_cleanup(&swapfile_lock);
+    return 0;
 }
 
 

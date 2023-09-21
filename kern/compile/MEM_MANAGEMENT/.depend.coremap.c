@@ -13,5 +13,6 @@ coremap.o: ../../vm/coremap.c ../../include/coremap.h \
  opt-tlb_testing.h ../../include/vm.h opt-tlb_management.h \
  ../../include/addrspace.h ../../include/elf.h includelinks/machine/elf.h \
  opt-dumbvm.h opt-on_demand.h ../../include/swapfile.h \
- ../../include/vfs.h ../../include/bitmap.h ../../include/uio.h \
- ../../include/kern/iovec.h ../../include/vnode.h includelinks/mips/vm.h
+ ../../include/kern/fcntl.h ../../include/vfs.h ../../include/bitmap.h \
+ ../../include/uio.h ../../include/kern/iovec.h ../../include/vnode.h \
+ includelinks/mips/vm.h

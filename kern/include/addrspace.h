@@ -77,6 +77,7 @@ struct addrspace {
         int initialized;
         struct segment seg1;
         struct segment seg2;
+        struct segment stackseg;
         //Elf32_Phdr seg_header1;
         //Elf32_Phdr seg_header2;
         #endif
