@@ -1,8 +1,4 @@
-#include <types.h>
-#include <mips/tlb.h>
-#include <vm.h>
-
-
+#include <vm_tlb.h>
 
 
 // Round robin algorithm for victim selection in the tlb
@@ -13,4 +9,10 @@ int tlb_get_victim(void){
     next_victim = (next_victim + 1) % NUM_TLB;
     return victim;
 
+}
+
+int invalidate_entry(vaddr_t entryhi, paddr_t entrylow){
+    int t=tlb_probe(entryhi, entrylow);
+    tlb_write(TLBHI_INVALID(t), TLBLO_INVALID(), t);
+    return 0;
 }

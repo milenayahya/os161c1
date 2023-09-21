@@ -128,6 +128,12 @@ void destroy_ptable(paddr_t *ptable, long npages){
         freeRamFrames[index]=(unsigned char)1;   //Converts physical address at i in ptable in the corresponding index infreeRamFrames nad frees it
     }
     spinlock_release(&freemem_lock);
+
+    for(i=0;i<npages;i++){
+      if(ptable[i]&PAGE_SWAPPED){
+        swap_clear((off_t)(ptable[i]&(~PAGE_SWAPPED)));
+      }
+    }
     kfree(ptable);
 }
 

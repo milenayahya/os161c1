@@ -9,6 +9,7 @@
 #include <mips/tlb.h>
 #include <vm.h>
 #include <addrspace.h>
+#include <swapfile.h>
 #include <mips/vm.h>
 
 paddr_t * getfreeuserpages(unsigned long *npages, paddr_t *firstpaddr);

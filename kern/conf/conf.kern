@@ -387,6 +387,7 @@ file      syscall/time_syscalls.c
 # Startup and initialization
 #
 defoption   hello
+defoption   mv_vm
 defoption   syscalls
 defoption   synch
 defoption   waitpid
@@ -398,7 +399,9 @@ defoption   swapping
 
 file      main/main.c
 file      main/menu.c
-optfile hello main/hello.c
+
+optfile     hello           main/hello.c
+optfile     mv_vm           vm/mv_vm.c
 optfile     syscalls        syscall/file_syscalls.c 
 optfile     syscalls        syscall/proc_syscalls.c
 optfile     tlb_management  vm/vm_tlb.c

@@ -31,7 +31,6 @@ machine mips file    arch/mips/thread/threadstart.S
 machine mips file    arch/mips/vm/ram.c		
 machine mips file    vm/copyinout.c		
 defoption   dumbvm
-machine mips optfile dumbvm    arch/mips/vm/dumbvm.c
 machine mips file    arch/mips/syscall/syscall.c	
 platform sys161 file    arch/mips/locore/cache-mips161.S
 platform sys161 file    arch/mips/locore/exception-mips1.S
@@ -107,6 +106,7 @@ file      syscall/loadelf.c
 file      syscall/runprogram.c
 file      syscall/time_syscalls.c
 defoption   hello
+defoption   mv_vm
 defoption   syscalls
 defoption   synch
 defoption   waitpid
@@ -117,7 +117,8 @@ defoption   on_demand
 defoption   swapping
 file      main/main.c
 file      main/menu.c
-optfile hello main/hello.c
+optfile     hello           main/hello.c
+optfile     mv_vm           vm/mv_vm.c
 optfile     syscalls        syscall/file_syscalls.c 
 optfile     syscalls        syscall/proc_syscalls.c
 optfile     tlb_management  vm/vm_tlb.c
@@ -163,7 +164,6 @@ device rtclock0 at ltimer*
 device random0 at lrandom*	
 options semfs			
 options sfs			
-options dumbvm			
 options syscalls
 options synch           
 options waitpid
@@ -171,3 +171,4 @@ options tlb_management
 options paging
 options on_demand
 options swapping
+options mv_vm

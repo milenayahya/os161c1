@@ -13,5 +13,7 @@ main.o: ../../main/main.c ../../include/types.h \
  ../../include/vm.h includelinks/machine/vm.h opt-paging.h \
  opt-tlb_management.h ../../include/mainbus.h ../../include/vfs.h \
  ../../include/device.h ../../include/syscall.h opt-syscalls.h \
- ../../include/test.h ../../include/version.h autoconf.h \
+ ../../include/test.h ../../include/version.h opt-swapping.h \
+ ../../include/swapfile.h ../../include/bitmap.h ../../include/uio.h \
+ ../../include/kern/iovec.h ../../include/vnode.h autoconf.h \
  ../../include/hello.h opt-hello.h ../../include/vmstats.h

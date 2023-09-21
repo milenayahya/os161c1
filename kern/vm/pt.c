@@ -1,7 +1,38 @@
 #include <pt.h>
 
 
-// N.B: we still do not update the page table after loading a page on demand anywhere!!
+
+struct page_queue *head=NULL;
+struct page_queue *tail=NULL;
+
+void queue_page(long frame){
+    //If not initialized
+    if(tail==NULL){
+        KASSERT(head==NULL && tail==NULL);
+        tail=(struct page_queue *)kmalloc(sizeof(struct page_queue));
+        head=tail;
+    }else{
+        //create new tail            
+        tail->next=(struct page_queue *)kmalloc(sizeof(struct page_queue));
+        //update the tail
+        tail=tail->next;
+    }
+    //new tail
+    tail->index=frame;
+    tail->next=NULL;
+}
+
+long dequeue_page(){
+    if(head==NULL){
+        return 0;
+    }
+    long output=head->index;
+    struct page_queue *tmp=head;
+    head=head->next;
+    kfree(tmp);
+    return output;
+}
+
 
 
 /// @brief Inits an empty physical page table
@@ -23,9 +54,10 @@ paddr_t getuserppage(){
 
     paddr_t frame = getfreeuserpage();
     if (frame == 0)
-        return alloc_upage_from_ram();
-    else
-        return frame;
+        frame=alloc_upage_from_ram();
+    
+
+    return frame;
 
 }
 
@@ -58,7 +90,7 @@ paddr_t alloc_upage_from_ram(){
     paddr_t paddr=ram_stealmem(1);
     if(paddr==0){
       // implement page replacement
-
+        
       spinlock_release(&stealmem_lock);             
       return paddr;
     }

@@ -31,13 +31,14 @@
 * * vm/swapfile.h
 * * fs/sfs/sfs_fsops.c
 * * fs/sfs/sfs_vnops.c
+* * vm/mv_vm.c
 * * fs/semfs/semfs_vnops.c
 * * syscall/file_syscalls.c
 * * fs/sfs/sfs_io.c
 * * fs/sfs/sfs_bmap.c
 * * vm/segments.c
-* mips arch/mips/vm/dumbvm.c
 * * vm/coremap.c
+* * vm/addrspace.c
 * mips ../common/libc/arch/mips/setjmp.S
 * mips ../common/gcc-millicode/adddi3.c
 * mips ../common/gcc-millicode/anddi3.c
