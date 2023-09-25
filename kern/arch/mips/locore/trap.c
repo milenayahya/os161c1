@@ -89,6 +89,12 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 	    case EX_TLBL:
 	    case EX_TLBS:
 		sig = SIGSEGV;
+
+		#if OPT_PAGING
+		kprintf("Segmentation Fault EPC: 0x%x , vaddr: 0x%x\n", epc, vaddr);
+		sys__exit(-1);
+		return;
+		#endif
 		break;
 	    case EX_ADEL:
 	    case EX_ADES:

@@ -746,6 +746,7 @@ thread_startup(void (*entrypoint)(void *data1, unsigned long data2),
 	/* Clear the wait channel and set the thread state. */
 	cur->t_wchan_name = NULL;
 	cur->t_state = S_RUN;
+	
 
 	/* Release the runqueue lock acquired in thread_switch. */
 	spinlock_release(&curcpu->c_runqueue_lock);
@@ -762,6 +763,9 @@ thread_startup(void (*entrypoint)(void *data1, unsigned long data2),
 	/* Call the function. */
 	entrypoint(data1, data2);
 
+	#if OPT_WAITPID
+		proc_remthread(curthread);
+	#endif
 	/* Done. */
 	thread_exit();
 }
@@ -786,7 +790,9 @@ thread_exit(void)
 	 * Detach from our process. You might need to move this action
 	 * around, depending on how your wait/exit works.
 	 */
-	//proc_remthread(cur);
+	#if !OPT_WAITPID
+		proc_remthread(cur);
+	#endif
 
 	/* Make sure we *are* detached (move this only if you're sure!) */
 	KASSERT(cur->t_proc == NULL);

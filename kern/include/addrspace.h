@@ -66,13 +66,13 @@ struct segment{
 
 struct addrspace {
 #if OPT_PAGING
-        vaddr_t as_vbase1;  //base of code segment
-        paddr_t *as_ptable1;
+        //vaddr_t as_vbase1;  //base of code segment
+        /*paddr_t *as_ptable1;
         size_t as_npages1;
         vaddr_t as_vbase2;  //base of data segment
         paddr_t *as_ptable2;
         size_t as_npages2;
-        paddr_t *as_stackpbase; //no need o
+        paddr_t *as_stackpbase; //no need o*/
         #if OPT_ON_DEMAND
         int initialized;
         struct segment seg1;

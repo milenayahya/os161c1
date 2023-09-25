@@ -125,6 +125,13 @@ common_prog(int nargs, char **args)
 		return ENOMEM;
 	}
 
+	/*struct vnode **v=NULL;
+	result = vfs_lookup(args[0], v);
+	if (result==ENOENT) {
+		kprintf("No such file or directory");
+		return result;
+	}*/
+
 	result = thread_fork(args[0] /* thread name */,
 			proc /* new process */,
 			cmd_progthread /* thread function */,

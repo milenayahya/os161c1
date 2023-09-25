@@ -34,7 +34,7 @@ options sfs			# Always use the file system
 options mv_vm
 options syscalls
 
-options synch           #Not related to C1 project
+#options synch           #Not related to C1 project
 options waitpid
 options tlb_management
 options paging

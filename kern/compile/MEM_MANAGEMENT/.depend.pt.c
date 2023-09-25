@@ -13,5 +13,6 @@ pt.o: ../../vm/pt.c ../../include/pt.h ../../include/types.h \
  ../../include/bitmap.h ../../include/uio.h ../../include/kern/iovec.h \
  ../../include/vnode.h ../../include/vm.h opt-tlb_management.h \
  includelinks/mips/tlb.h opt-tlb_testing.h includelinks/mips/vm.h \
- ../../include/vm_tlb.h ../../include/addrspace.h ../../include/elf.h \
- includelinks/machine/elf.h opt-dumbvm.h opt-on_demand.h
+ ../../include/vm_tlb.h ../../include/vmstats.h ../../include/addrspace.h \
+ ../../include/elf.h includelinks/machine/elf.h opt-dumbvm.h \
+ opt-on_demand.h

@@ -15,4 +15,4 @@ loadelf.o: ../../syscall/loadelf.c ../../include/types.h \
  ../../include/pt.h ../../include/spl.h ../../include/cpu.h \
  ../../include/swapfile.h ../../include/kern/fcntl.h ../../include/vfs.h \
  ../../include/bitmap.h includelinks/mips/tlb.h opt-tlb_testing.h \
- includelinks/mips/vm.h ../../include/vm_tlb.h
+ includelinks/mips/vm.h ../../include/vm_tlb.h ../../include/vmstats.h

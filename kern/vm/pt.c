@@ -2,71 +2,6 @@
 
 
 
-struct page_queue *head=NULL;
-struct page_queue *tail=NULL;
-
-void queue_page(vaddr_t frame, struct segment *seg){
-    //If not initialized
-    if(tail==NULL){
-        KASSERT(head==NULL && tail==NULL);
-        tail=(struct page_queue *)kmalloc(sizeof(struct page_queue));
-        head=tail;
-    }else{
-        //create new tail            
-        tail->next=(struct page_queue *)kmalloc(sizeof(struct page_queue));
-        //update the tail
-        tail=tail->next;
-    }
-    //new tail
-    tail->index=((frame-(seg->vbaseaddr&PAGE_FRAME))&PAGE_FRAME)/PAGE_SIZE;
-    tail->seg=seg;
-    tail->next=NULL;
-}
-/// @brief Finds the first page loaded/swapped in, 
-/// retrieves the physical address from the respective segment (stored in page_queue), 
-/// swaps it out and updates the entry,
-/// returns it and pops from the list.
-/// @return 
-paddr_t dequeue_page(){
-    if(head==NULL){
-        panic("No pages to dequeue");
-    }
-    paddr_t output=head->seg->ptable[head->index];
-    KASSERT((output&PAGE_FRAME)==output);
-
-    struct page_queue *tmp=head;
-    off_t ret_offset;
-    swap_out(head->seg->ptable[head->index],&ret_offset);          
-    ret_offset|=PAGE_SWAPPED;
-
-    invalidate_entry(head->index*PAGE_SIZE, output);
-
-    head->seg->ptable[head->index]=ret_offset;
-    head=head->next;
-    kfree(tmp);
-    return output;
-}
-
-void clear_queue(struct addrspace *as){
-    struct page_queue *iterator1=NULL;
-    struct page_queue *iterator2=head;
-    while(iterator2!=NULL){
-        if(iterator2->seg==&(as->seg1) ||
-            iterator2->seg==&(as->seg2) ||
-            iterator2->seg==&(as->stackseg)){
-                void * tmp_pointer=(void*) iterator2;
-                iterator2=iterator2->next;
-                kfree(tmp_pointer);
-                if(iterator1!=NULL)
-                    iterator1->next=iterator2;
-            }else{
-                iterator1=iterator2;
-                iterator2=iterator2->next;
-            }
-    }
-    return;
-}
-
 /// @brief Inits an empty physical page table
 /// @param npages 
 /// @return the empty array
@@ -98,6 +33,7 @@ paddr_t getuserppage(){
 //is called and it steals a new frame from the RAM. It returns the physical address of the new frame,
 //or it returns 0 in case of failure (and soon to be implemented: finds a victim,i.e, page replacement)
 
+//contiguous  
 paddr_t getfreeuserpage(){ //looks for an available frame and allocates it to a page
 
     if (!isTableActive()) return 0;

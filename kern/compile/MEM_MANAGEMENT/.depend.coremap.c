@@ -15,4 +15,4 @@ coremap.o: ../../vm/coremap.c ../../include/coremap.h \
  opt-dumbvm.h opt-on_demand.h ../../include/swapfile.h \
  ../../include/kern/fcntl.h ../../include/vfs.h ../../include/bitmap.h \
  ../../include/uio.h ../../include/kern/iovec.h ../../include/vnode.h \
- includelinks/mips/vm.h
+ includelinks/mips/vm.h ../../include/vm_tlb.h ../../include/vmstats.h

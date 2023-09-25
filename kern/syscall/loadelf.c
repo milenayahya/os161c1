@@ -260,7 +260,7 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 
 		#if OPT_ON_DEMAND
 		as_define_segment(as, ph.p_vaddr, ph.p_offset, ph.p_memsz, ph.p_filesz, v,ph.p_flags);
-			
+		kprintf("Flags for seg %d are: %x",i  ,ph.p_flags);
 		#endif
 	}
 
@@ -298,20 +298,10 @@ load_elf(struct vnode *v, vaddr_t *entrypoint)
 				ph.p_type);
 			return ENOEXEC;
 		}
-		//Untill here loads segments headers
+		//Until here loads segments headers
 
 		//from now on we can mess with the code
 		#if OPT_ON_DEMAND
-		//Load First Page
-		//if(as->as_ptable1[0]==0)
-		//	as->as_ptable1[0]= getuserppage();
-		//if(as->as_ptable2[0]==0)
-		//	as->as_ptable2[0]=getuserppage();
-
-		// if(i==0)
-		// 	result = load_page(as, v,as->seg1.offset, as->seg1.offset, as->seg1.vbaseaddr, as->seg1.flags & PF_X);
-		// else if(i==1)
-		// 	result = load_page(as, v,as->seg2.offset, as->seg2.offset, as->seg2.vbaseaddr, as->seg2.flags & PF_X);
 		
 		#else
 		result = load_segment(as, v, ph.p_offset, ph.p_vaddr,

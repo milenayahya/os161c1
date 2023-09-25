@@ -1,4 +1,97 @@
+
+
 #include <segments.h>
+
+struct addrspace *
+as_create(void)
+{
+	struct addrspace *as = kmalloc(sizeof(struct addrspace));
+	bzero(as,sizeof(struct addrspace));
+
+	if (as==NULL) {
+		return NULL;
+	}
+	#if OPT_PAGING
+
+	/*as->as_vbase1 = 0;
+	as->as_ptable1 = 0;
+	as->as_npages1 = 0;
+
+	as->as_vbase2 = 0;
+	as->as_ptable2 = 0;
+	as->as_npages2 = 0;
+
+	as->as_stackpbase = 0;*/
+	as->initialized=0;
+	#if OPT_ON_DEMAND
+	// as->seg_header1=NULL;
+	
+	seg_init(&as->seg1);
+	seg_init(&as->seg2);
+	// as->seg_header2=NULL;
+	#endif
+	#else
+
+	as->as_vbase1 = 0;
+	as->as_pbase1 = 0;
+	as->as_npages1 = 0;
+	as->as_vbase2 = 0;
+	as->as_pbase2 = 0;
+	as->as_npages2 = 0;
+	as->as_stackpbase = 0;
+
+	
+
+	#endif
+
+	return as;
+}
+
+void seg_init(struct segment *seg){
+	seg->vbaseaddr=0;
+	seg->npages=0;
+	seg->ptable=0;
+	seg->filesize=0;
+	seg->memsize=0;
+	seg->offset=0;
+	seg->elf_node=0;
+	seg->flags=0;
+}
+
+int
+as_define_stack(struct addrspace *as, vaddr_t *stackptr)
+{
+	KASSERT(as->stackseg.ptable != 0);
+
+	as->stackseg.vbaseaddr=USERSTACK-MV_VM_STACKPAGES*PAGE_SIZE;
+	*stackptr = USERSTACK;
+	return 0;
+}
+
+
+int as_define_segment(struct addrspace *as, vaddr_t vbase, off_t offset, size_t memsize, size_t filesize, struct vnode* elf_node, uint32_t flags){
+	if(as->initialized==0){
+		as->seg1.vbaseaddr=vbase;
+		as->seg1.offset=offset;
+		as->seg1.memsize=memsize;
+		as->seg1.filesize=filesize;
+		as->seg1.elf_node=elf_node;
+		as->seg1.flags=flags;
+		as->initialized++;
+		return 0;
+	}else if(as->initialized==1){
+		as->seg2.vbaseaddr=vbase;
+		as->seg2.offset=offset;
+		as->seg2.memsize=memsize;
+		as->seg2.filesize=filesize;
+		as->seg2.elf_node=elf_node;
+		as->seg2.flags=flags;
+		as->initialized++;
+		return 0;
+	}
+	else
+		return 1;
+}
 
 
 int

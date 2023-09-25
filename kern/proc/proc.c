@@ -173,9 +173,9 @@ proc_create(const char *name)
 
 	proc->p_numthreads = 0;
 	spinlock_init(&proc->p_lock);
-	#if OPT_WAITPID
+
 	proc_init_waitpid(proc, name);
-	#endif
+
 	/* VM fields */
 	proc->p_addrspace = NULL;
 
@@ -258,9 +258,9 @@ proc_destroy(struct proc *proc)
 		struct addrspace *as;
 
 		if (proc == curproc) {
-			#if OPT_WAITPID
+			
 			proc_end_waitpid(proc);
-			#endif
+
 			as = proc_setas(NULL);
 			as_deactivate();
 		}
