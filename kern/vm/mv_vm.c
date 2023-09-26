@@ -483,7 +483,8 @@ void as_destroy(struct addrspace *as){
   freeppages(as->as_stackpbase, MV_VM_STACKPAGES);
   #endif
   clear_queue(as);
-  
+  vfs_close(as->seg1.elf_node);
+  vfs_close(as->seg2.elf_node);
   kfree(as);
 }
 
