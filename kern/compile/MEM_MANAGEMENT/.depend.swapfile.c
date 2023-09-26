@@ -7,4 +7,4 @@ swapfile.o: ../../vm/swapfile.c ../../include/swapfile.h \
  opt-hangman.h includelinks/machine/spinlock.h ../../include/uio.h \
  ../../include/kern/iovec.h ../../include/vnode.h \
  ../../include/kern/errno.h ../../include/vm.h includelinks/machine/vm.h \
- opt-paging.h opt-tlb_management.h
+ opt-paging.h opt-tlb_management.h ../../include/vmstats.h

@@ -181,7 +181,7 @@ lamebus_write_register(struct lamebus_softc *bus, int slot,
 	 * Make sure the store happens before we do anything else to
 	 * the device.
 	 */
- n	membar_store_store();
+	membar_store_store();
 }
 
 

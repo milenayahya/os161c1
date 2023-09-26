@@ -1,4 +1,5 @@
 #include <swapfile.h>
+#include <vmstats.h>
 
 
 int swap_init(void){
@@ -55,7 +56,8 @@ unsigned long swap_out(paddr_t page, off_t *ret_offset){
         return ENOSPC;
     }
 
-    
+    swap_writes++;
+
     *ret_offset=index*PAGE_SIZE;
     return 0;
 
@@ -90,8 +92,12 @@ int swap_in(paddr_t page, off_t offset_swapfile){
     VOP_READ(swapfile, &uio);
     
     if(uio.uio_resid!=0)
+    {
         panic("Couldn't read the whole page from swapfile");
+    }
 
+    page_faults_disk++;
+    page_faults_swap++;
     
 
     return 0;

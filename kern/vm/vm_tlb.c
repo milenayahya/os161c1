@@ -52,7 +52,7 @@ int insert_tlb_entry(vaddr_t fault_aligned, paddr_t paddr, bool readonly)
 	int victim = tlb_get_victim();
 	tlb_write(ehi, elo, victim);
 	tlb_faults_with_replace++;
-	kprintf("tlb entry replaced\n");
+	//kprintf("tlb entry replaced\n");
 	splx(spl);
 	#endif
 	return 0;

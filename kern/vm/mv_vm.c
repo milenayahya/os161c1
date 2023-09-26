@@ -32,6 +32,7 @@
 #include <lib.h>
 #include <spl.h>
 #include <cpu.h>
+#include "vmstats.h"
 #include <spinlock.h>
 #include <proc.h>
 #include <current.h>
@@ -49,7 +50,7 @@
 #include "opt-swapping.h"
 #include "opt-on_demand.h"
 #include "opt-tlb_management.h"
-#include "vmstats.h"
+
 
 #define OPT_SWAPPING 1
 /*
@@ -128,6 +129,8 @@ vm_bootstrap(void)
   spinlock_acquire(&freemem_lock);
   allocTableActive = 1;
   spinlock_release(&freemem_lock);
+
+  stats_init();
 }
 
 static paddr_t replace_page(paddr_t *ptable){
@@ -146,14 +149,19 @@ int page_fault(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, struct segmen
     long frame=(long) ((fault_aligned - vbase)/PAGE_SIZE);
     paddr = seg->ptable[frame];
 
+	if(paddr !=0 && (paddr&PAGE_SWAPPED)==0) //page is in memory, retrieve it from PT
+	{
+		tlb_reloads++;
+	}
+
     #if OPT_ON_DEMAND
     //paddr not found in PT, try to load page to memory and update PT
 
     if (paddr == 0){ //the page is not already loaded in memory
         paddr=getuserppage();
+
         #if OPT_SWAPPING
-        //could not load page in memory as memory is full, need to swap
-        if(paddr == 0)
+        if(paddr == 0) //could not load page in memory as memory is full, need to swap
         {
             paddr=replace_page(seg->ptable);
             if(paddr==0){
@@ -166,19 +174,21 @@ int page_fault(vaddr_t fault_aligned, vaddr_t vbase, vaddr_t vtop, struct segmen
         seg->ptable[frame]=paddr;
         queue_page(fault_aligned,seg);
 		*dest_paddr=paddr;
+
 		return LOAD_PAGE;
         
     }else if((paddr&PAGE_SWAPPED)!=0){ //the page is swapped out and we need to swap it in
         //In case we want to delete read_only pages, we must look for a free page before
         paddr_t new_paddr;
         new_paddr=getuserppage();
-        if(new_paddr==0)
+        if(new_paddr==0) 
             new_paddr=replace_page(seg->ptable);
         
         swap_in(new_paddr, (off_t) paddr& (~PAGE_SWAPPED));
         seg->ptable[frame]=new_paddr;
 		*dest_paddr=new_paddr;
         queue_page(fault_aligned,seg);
+
 		return SWAP_IN_PAGE;
     }
 	#endif
@@ -322,6 +332,8 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	bool readonly;
 	//int spl;
 
+	tlb_faults++;
+
 	fault_aligned=faultaddress&PAGE_FRAME;
 
 	DEBUG(DB_VM, "dumbvm: fault: 0x%x\n", fault_aligned);
@@ -396,6 +408,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		int result=page_fault(fault_aligned, stackbase, stacktop, &(as->stackseg),&paddr);
 		if(result==LOAD_PAGE){
 			bzero((void *)PADDR_TO_KVADDR(paddr), PAGE_SIZE);
+			page_faults_zeroed++;
 		}
 	}
 	else {
@@ -447,7 +460,6 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	/* Disable interrupts on this CPU while frobbing the TLB. */
 	//spl = splhigh();
 
-	tlb_faults++;
 	
 	return insert_tlb_entry(fault_aligned,paddr, readonly);
 

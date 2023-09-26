@@ -1,6 +1,12 @@
 
 
 #include <segments.h>
+#include <vmstats.h>
+
+static void zero_a_region(paddr_t paddr, size_t n)
+{
+    bzero((void *)PADDR_TO_KVADDR(paddr), n);
+}
 
 struct addrspace *
 as_create(void)
@@ -143,7 +149,7 @@ load_page(struct segment *seg,
 	}else{  //middle page
 		file_offset= seg->offset + (page_index*PAGE_SIZE) - vbaseoffset;
 		if(seg->filesize<(page_index*PAGE_SIZE) -vbaseoffset){
-			resid=0;
+			resid=0;  //memsize > filesize
 			file_offset=seg->filesize;
 		}else{
 			resid=seg->filesize-(page_index*PAGE_SIZE) -vbaseoffset;
@@ -168,6 +174,21 @@ load_page(struct segment *seg,
 	u.uio_rw = UIO_READ;
 	u.uio_space = as;
 */
+
+	//zero the entire page:
+	zero_a_region(paddr,PAGE_SIZE);
+
+
+	if(resid != 0)
+	{
+		page_faults_elf++;
+		page_faults_disk++;
+	
+	}
+	else{
+
+		page_faults_zeroed++; 
+	}
 
 	uio_kinit(&iov,&u,(void *)PADDR_TO_KVADDR(dest_addr),resid,file_offset, UIO_READ);
 	

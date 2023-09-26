@@ -403,7 +403,7 @@ file      main/menu.c
 
 optfile     hello           main/hello.c
 optfile     mv_vm           vm/mv_vm.c
-
+optfile     mv_vm           vm/vmstats.c
 optfile     syscalls        syscall/file_syscalls.c 
 optfile     syscalls        syscall/proc_syscalls.c
 optfile     tlb_management  vm/vm_tlb.c

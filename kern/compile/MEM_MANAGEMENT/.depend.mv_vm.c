@@ -5,16 +5,16 @@ mv_vm.o: ../../vm/mv_vm.c ../../include/types.h \
  ../../include/spl.h ../../include/cpu.h ../../include/spinlock.h \
  ../../include/hangman.h opt-hangman.h includelinks/machine/spinlock.h \
  ../../include/threadlist.h includelinks/machine/vm.h opt-paging.h \
- ../../include/proc.h opt-waitpid.h ../../include/current.h \
- includelinks/machine/current.h ../../include/thread.h \
- ../../include/array.h includelinks/machine/thread.h \
- ../../include/setjmp.h includelinks/kern/machine/setjmp.h \
- includelinks/mips/tlb.h opt-tlb_testing.h ../../include/coremap.h \
- ../../include/vm.h opt-tlb_management.h ../../include/addrspace.h \
- ../../include/elf.h includelinks/machine/elf.h opt-dumbvm.h \
- opt-on_demand.h ../../include/swapfile.h ../../include/kern/fcntl.h \
- ../../include/vfs.h ../../include/bitmap.h ../../include/uio.h \
- ../../include/kern/iovec.h ../../include/vnode.h includelinks/mips/vm.h \
- ../../include/vm_tlb.h ../../include/vmstats.h ../../include/segments.h \
- ../../include/pt.h ../../include/syscall.h opt-syscalls.h opt-swapping.h \
- ../../include/vmstats.h
+ ../../include/vmstats.h ../../include/proc.h opt-waitpid.h \
+ ../../include/current.h includelinks/machine/current.h \
+ ../../include/thread.h ../../include/array.h \
+ includelinks/machine/thread.h ../../include/setjmp.h \
+ includelinks/kern/machine/setjmp.h includelinks/mips/tlb.h \
+ opt-tlb_testing.h ../../include/coremap.h ../../include/vm.h \
+ opt-tlb_management.h ../../include/addrspace.h ../../include/elf.h \
+ includelinks/machine/elf.h opt-dumbvm.h opt-on_demand.h \
+ ../../include/swapfile.h ../../include/kern/fcntl.h ../../include/vfs.h \
+ ../../include/bitmap.h ../../include/uio.h ../../include/kern/iovec.h \
+ ../../include/vnode.h includelinks/mips/vm.h ../../include/vm_tlb.h \
+ ../../include/vmstats.h ../../include/segments.h ../../include/pt.h \
+ ../../include/syscall.h opt-syscalls.h opt-swapping.h

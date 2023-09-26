@@ -31,8 +31,10 @@
 #include <kern/errno.h>
 #include <kern/reboot.h>
 #include <kern/unistd.h>
+#include <kern/fcntl.h>
 #include <limits.h>
 #include <lib.h>
+#include "vmstats.h"
 #include <uio.h>
 #include <clock.h>
 #include <mainbus.h>
@@ -125,12 +127,14 @@ common_prog(int nargs, char **args)
 		return ENOMEM;
 	}
 
-	/*struct vnode **v=NULL;
-	result = vfs_lookup(args[0], v);
-	if (result==ENOENT) {
-		kprintf("No such file or directory");
+	struct vnode *v=NULL;
+	char name[128];
+	strcpy(name, args[0]);
+	result = vfs_lookup(name, &v);
+	if (result) {
+		kprintf("No such file or something");
 		return result;
-	}*/
+	}
 
 	result = thread_fork(args[0] /* thread name */,
 			proc /* new process */,
@@ -765,6 +769,8 @@ cmd_dispatch(char *cmd)
 			kprintf("Operation took %llu.%09lu seconds\n",
 				(unsigned long long) duration.tv_sec,
 				(unsigned long) duration.tv_nsec);
+				
+			print_stats();
 
 			return result;
 		}
