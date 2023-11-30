@@ -118,7 +118,8 @@ load_page(struct segment *seg,
 	// DEBUG(DB_EXEC, "ELF: Loading %lu bytes to 0x%lx\n",
 	//       (unsigned long) filesize, (unsigned long) vaddr);
 	unsigned long page_index=(vaddr-(seg->vbaseaddr &PAGE_FRAME))/PAGE_SIZE;
-	vaddr_t vbaseoffset=(page_index==0)?seg->vbaseaddr &(~PAGE_FRAME) : 0; 									//How much to read in the last page from page start or where to start reading in the first page;
+	//vaddr_t vbaseoffset=(page_index==0)?seg->vbaseaddr &(~PAGE_FRAME) : 0; 									//How much to read in the last page from page start or where to start reading in the first page;
+	vaddr_t vbaseoffset=seg->vbaseaddr &(~PAGE_FRAME);
 	vaddr_t dest_addr=paddr;
 	size_t resid=PAGE_SIZE;
 	off_t file_offset;
